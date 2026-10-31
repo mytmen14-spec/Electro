@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { Muxer, ArrayBufferTarget } from 'webm-muxer';
 
 // ============ УТИЛИТЫ ============
 
@@ -1135,107 +1136,233 @@ export default function TransformerAnimation() {
   // Запись видео
   const [isRecording, setIsRecording] = useState(false);
   const [recordingProgress, setRecordingProgress] = useState(0);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
   const isRecordingRef = useRef(false);
+
+  // Fallback метод записи через MediaRecorder
+  const startRecordingWithMediaRecorder = async (canvas: HTMLCanvasElement) => {
+    if (typeof canvas.captureStream !== 'function') {
+      alert('Ваш браузер не поддерживает запись видео.\nПопробуйте Chrome, Firefox или Edge последней версии.');
+      return;
+    }
+
+    if (typeof MediaRecorder === 'undefined') {
+      alert('Ваш браузер не поддерживает MediaRecorder.\nПопробуйте Chrome, Firefox или Edge.');
+      return;
+    }
+
+    restart();
+
+    try {
+      let stream: MediaStream;
+      try {
+        stream = canvas.captureStream(60);
+      } catch {
+        stream = canvas.captureStream();
+      }
+
+      const mimeTypes = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+      let selectedMime = '';
+      for (const mime of mimeTypes) {
+        try {
+          if (MediaRecorder.isTypeSupported(mime)) {
+            selectedMime = mime;
+            break;
+          }
+        } catch { /* ignore */ }
+      }
+
+      const options: MediaRecorderOptions = { videoBitsPerSecond: 8_000_000 };
+      if (selectedMime) options.mimeType = selectedMime;
+
+      const recorder = new MediaRecorder(stream, options);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `transformer-animation-${Date.now()}.webm`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setIsRecording(false);
+        isRecordingRef.current = false;
+        setRecordingProgress(0);
+      };
+
+      recorder.start(1000);
+      setIsRecording(true);
+      isRecordingRef.current = true;
+
+      const updateProgress = () => {
+        if (!isRecordingRef.current) return;
+        const elapsed = (performance.now() - startTimeRef.current - totalPausedRef.current) / 1000;
+        const progress = Math.min(elapsed / TOTAL_DURATION, 1);
+        setRecordingProgress(progress);
+        if (progress >= 1) {
+          isRecordingRef.current = false;
+          recorder.stop();
+        } else {
+          requestAnimationFrame(updateProgress);
+        }
+      };
+      requestAnimationFrame(updateProgress);
+    } catch (error) {
+      console.error('Ошибка записи:', error);
+      alert('Ошибка при записи видео: ' + (error as Error).message);
+    }
+  };
 
   const startRecording = async () => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      alert('Canvas не найден. Попробуйте обновить страницу.');
+      return;
+    }
 
-    // Предупреждение пользователя
-    const confirmed = window.confirm(
-      'Начнётся запись 60-секундной анимации в формате WebM.\n\n' +
-      '⚠️ Не сворачивайте вкладку и не переключайтесь на другие окна!\n\n' +
-      'После завершения файл скачается автоматически.\n\n' +
-      'Продолжить?'
-    );
+    // Проверяем поддержку WebCodecs API
+    const hasWebCodecs = typeof VideoEncoder !== 'undefined' && typeof VideoFrame !== 'undefined';
     
-    if (!confirmed) return;
+    if (!hasWebCodecs) {
+      // Fallback на MediaRecorder
+      await startRecordingWithMediaRecorder(canvas);
+      return;
+    }
 
     // Перезапускаем анимацию с начала
     restart();
 
-    // Получаем поток с canvas
-    const stream = canvas.captureStream(60); // 60 FPS
-    
-    // Определяем поддерживаемый формат
-    const mimeTypes = [
-      'video/webm;codecs=vp9',
-      'video/webm;codecs=vp8',
-      'video/webm'
-    ];
-    
-    let selectedMime = '';
-    for (const mime of mimeTypes) {
-      if (MediaRecorder.isTypeSupported(mime)) {
-        selectedMime = mime;
-        break;
+    try {
+      // Проверяем, что codec поддерживается
+      const support = await VideoEncoder.isConfigSupported({
+        codec: 'vp09.00.10.08',
+        width: canvas.width,
+        height: canvas.height,
+        bitrate: 8_000_000,
+        framerate: 60
+      });
+
+      if (!support.supported) {
+        console.warn('VP9 codec не поддерживается, переключаемся на MediaRecorder');
+        await startRecordingWithMediaRecorder(canvas);
+        return;
+      }
+
+      // Создаём target для webm-muxer
+      const target = new ArrayBufferTarget();
+      
+      // Создаём muxer
+      const muxer = new Muxer({
+        target,
+        video: {
+          codec: 'V_VP9',
+          width: canvas.width,
+          height: canvas.height
+        },
+        firstTimestampBehavior: 'offset'
+      });
+
+      // Создаём VideoEncoder
+      const encoder = new VideoEncoder({
+        output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+        error: (e) => {
+          console.error('Ошибка кодирования:', e);
+          alert('Ошибка кодирования видео: ' + (e as Error).message);
+          setIsRecording(false);
+          isRecordingRef.current = false;
+        }
+      });
+
+      // Настраиваем encoder
+      encoder.configure({
+        codec: 'vp09.00.10.08',
+        width: canvas.width,
+        height: canvas.height,
+        bitrate: 8_000_000, // 8 Mbps
+        framerate: 60
+      });
+
+      setIsRecording(true);
+      isRecordingRef.current = true;
+
+      const startTime = performance.now();
+      const frameDuration = 1000 / 60; // 60 FPS
+
+      // Функция захвата кадров
+      const captureFrame = () => {
+        if (!isRecordingRef.current) return;
+
+        const currentTime = performance.now();
+        const elapsed = (currentTime - startTimeRef.current - totalPausedRef.current) / 1000;
+        const progress = Math.min(elapsed / TOTAL_DURATION, 1);
+        setRecordingProgress(progress);
+
+        // Захватываем кадр с canvas
+        const frame = new VideoFrame(canvas, {
+          timestamp: (currentTime - startTime) * 1000 // микросекунды
+        });
+
+        // Кодируем кадр
+        encoder.encode(frame, { keyFrame: Math.floor(elapsed * 60) % 60 === 0 });
+        frame.close();
+
+        if (progress >= 1) {
+          // Завершаем запись
+          encoder.flush();
+          encoder.close();
+          muxer.finalize();
+
+          // Создаём blob и скачиваем
+          const buffer = target.buffer;
+          const blob = new Blob([buffer], { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `transformer-animation-${Date.now()}.webm`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          setIsRecording(false);
+          isRecordingRef.current = false;
+          setRecordingProgress(0);
+          return;
+        }
+
+        // Запланируем следующий кадр
+        const nextFrameTime = startTime + (elapsed * 1000) + frameDuration;
+        const delay = nextFrameTime - performance.now();
+        setTimeout(captureFrame, Math.max(0, delay));
+      };
+
+      // Начинаем захват
+      captureFrame();
+    } catch (error) {
+      console.error('Ошибка при запуске записи через WebCodecs:', error);
+      console.log('Переключаемся на fallback (MediaRecorder)...');
+      
+      // Переключаемся на fallback
+      try {
+        await startRecordingWithMediaRecorder(canvas);
+      } catch (fallbackError) {
+        console.error('Fallback тоже не сработал:', fallbackError);
+        alert('Не удалось записать видео.\nВаш браузер не поддерживает необходимые API.\nПопробуйте Chrome 94+ или Edge 94+.');
+        setIsRecording(false);
+        isRecordingRef.current = false;
       }
     }
-
-    if (!selectedMime) {
-      alert('Ваш браузер не поддерживает запись видео');
-      return;
-    }
-
-    // Создаем MediaRecorder
-    const mediaRecorder = new MediaRecorder(stream, {
-      mimeType: selectedMime,
-      videoBitsPerSecond: 8000000 // 8 Mbps для высокого качества
-    });
-
-    chunksRef.current = [];
-    
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) {
-        chunksRef.current.push(e.data);
-      }
-    };
-
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: 'video/webm' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `transformer-animation-${Date.now()}.webm`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      setIsRecording(false);
-      isRecordingRef.current = false;
-      setRecordingProgress(0);
-    };
-
-    mediaRecorderRef.current = mediaRecorder;
-    mediaRecorder.start(1000); // Собираем данные каждую секунду
-    setIsRecording(true);
-    isRecordingRef.current = true;
-
-    // Обновляем прогресс
-    const updateProgress = () => {
-      if (!isPlayingRef.current) return;
-      
-      const elapsed = (performance.now() - startTimeRef.current - totalPausedRef.current) / 1000;
-      const progress = Math.min(elapsed / TOTAL_DURATION, 1);
-      setRecordingProgress(progress);
-
-      if (progress >= 1) {
-        stopRecording();
-      } else {
-        requestAnimationFrame(updateProgress);
-      }
-    };
-    requestAnimationFrame(updateProgress);
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-      isRecordingRef.current = false;
-    }
+    // Останавливаем запись (завершится на следующем кадре)
+    isRecordingRef.current = false;
   };
 
   return (
