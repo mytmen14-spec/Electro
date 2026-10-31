@@ -1314,6 +1314,18 @@ export default function TransformerAnimation() {
     if (Math.floor(elapsed * 6) % 1 === 0) {
       setCurrentScene(currentValidIdx);
       setProgress(time / TOTAL_DURATION);
+      
+      // Обновляем субтитры и озвучку
+      if (isVoiceEnabled) {
+        const sceneScripts = voiceScripts[currentValidIdx];
+        if (sceneScripts) {
+          const activeScript = sceneScripts.find(s => time >= s.start && time < s.end);
+          if (activeScript && activeScript.text !== currentSubtitle) {
+            setCurrentSubtitle(activeScript.text);
+            speakText(activeScript.text);
+          }
+        }
+      }
     }
 
     const W = canvas.width;
@@ -1352,6 +1364,49 @@ export default function TransformerAnimation() {
 
     // Вирусные визуальные эффекты
     drawViralEffects(ctx, captionIdx, captionSceneP, time, W, H, scale);
+
+    // Субтитры (если включена озвучка)
+    if (isVoiceEnabled && currentSubtitle) {
+      const subtitleY = H * 0.78;
+      const maxWidth = W * 0.85;
+      
+      ctx.globalAlpha = 0.9;
+      ctx.font = `bold ${20 * scale}px 'Segoe UI', Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Фон для субтитров
+      const metrics = ctx.measureText(currentSubtitle);
+      const textWidth = Math.min(metrics.width, maxWidth);
+      const padding = 15 * scale;
+      
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.beginPath();
+      const rectX = W / 2 - textWidth / 2 - padding;
+      const rectY = subtitleY - 15 * scale;
+      const rectW = textWidth + padding * 2;
+      const rectH = 30 * scale;
+      const radius = 8 * scale;
+      
+      ctx.moveTo(rectX + radius, rectY);
+      ctx.lineTo(rectX + rectW - radius, rectY);
+      ctx.quadraticCurveTo(rectX + rectW, rectY, rectX + rectW, rectY + radius);
+      ctx.lineTo(rectX + rectW, rectY + rectH - radius);
+      ctx.quadraticCurveTo(rectX + rectW, rectY + rectH, rectX + rectW - radius, rectY + rectH);
+      ctx.lineTo(rectX + radius, rectY + rectH);
+      ctx.quadraticCurveTo(rectX, rectY + rectH, rectX, rectY + rectH - radius);
+      ctx.lineTo(rectX, rectY + radius);
+      ctx.quadraticCurveTo(rectX, rectY, rectX + radius, rectY);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Текст субтитров
+      ctx.shadowColor = '#00d4ff';
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(currentSubtitle, W / 2, subtitleY, maxWidth);
+      ctx.shadowBlur = 0;
+    }
 
     // Полоса прогресса
     ctx.globalAlpha = 0.6;
@@ -1433,9 +1488,18 @@ export default function TransformerAnimation() {
     window.addEventListener('resize', resize);
     animRef.current = requestAnimationFrame(render);
 
+    // Инициализируем SpeechSynthesis
+    if ('speechSynthesis' in window) {
+      speechSynthRef.current = window.speechSynthesis;
+    }
+
     return () => {
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animRef.current);
+      // Останавливаем озвучку при размонтировании
+      if (speechSynthRef.current) {
+        speechSynthRef.current.cancel();
+      }
     };
   }, [render]);
 
@@ -1446,11 +1510,66 @@ export default function TransformerAnimation() {
     if (!next) {
       // Пауза — запоминаем время
       pausedAtRef.current = performance.now();
+      // Останавливаем озвучку
+      if (speechSynthRef.current) {
+        speechSynthRef.current.pause();
+      }
     } else {
       // Возобновление — добавляем длительность паузы
       if (pausedAtRef.current > 0) {
         totalPausedRef.current += performance.now() - pausedAtRef.current;
         pausedAtRef.current = 0;
+      }
+      // Возобновляем озвучку
+      if (speechSynthRef.current && isVoiceEnabled) {
+        speechSynthRef.current.resume();
+      }
+    }
+  };
+
+  // Функция озвучки текста
+  const speakText = (text: string) => {
+    if (!isVoiceEnabled || !speechSynthRef.current) return;
+    
+    // Останавливаем предыдущую речь
+    speechSynthRef.current.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ru-RU';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    // Пытаемся найти русский голос
+    const voices = speechSynthRef.current.getVoices();
+    const russianVoice = voices.find(v => v.lang.startsWith('ru'));
+    if (russianVoice) {
+      utterance.voice = russianVoice;
+    }
+    
+    utteranceRef.current = utterance;
+    speechSynthRef.current.speak(utterance);
+  };
+
+  // Остановить озвучку
+  const stopVoice = () => {
+    if (speechSynthRef.current) {
+      speechSynthRef.current.cancel();
+    }
+    setCurrentSubtitle('');
+  };
+
+  // Включить/выключить озвучку
+  const toggleVoice = () => {
+    const next = !isVoiceEnabled;
+    setIsVoiceEnabled(next);
+    
+    if (!next) {
+      stopVoice();
+    } else {
+      // Инициализируем SpeechSynthesis
+      if (!speechSynthRef.current) {
+        speechSynthRef.current = window.speechSynthesis;
       }
     }
   };
@@ -1461,13 +1580,56 @@ export default function TransformerAnimation() {
     pausedAtRef.current = 0;
     isPlayingRef.current = true;
     setIsPlaying(true);
+    setCurrentSubtitle('');
   };
+
+  // Тексты озвучки для каждой сцены
+  const voiceScripts = [
+    // Сцена 1: 0-8 сек
+    [
+      { text: 'Девяносто девять процентов людей не знают, как это работает!', start: 0, end: 4 },
+      { text: 'Трансформатор — устройство, которое управляет всей энергией планеты.', start: 4, end: 8 },
+    ],
+    // Сцена 2: 8-20 сек
+    [
+      { text: 'Всего три детали: сердечник из стали и две медные обмотки.', start: 8, end: 13 },
+      { text: 'Первичная обмотка создаёт магнитное поле.', start: 13, end: 17 },
+      { text: 'Вторичная обмотка его ловит.', start: 17, end: 20 },
+    ],
+    // Сцена 3: 20-35 сек
+    [
+      { text: 'Это как волшебство, но это чистая физика!', start: 20, end: 25 },
+      { text: 'Переменный ток создаёт переменное магнитное поле.', start: 25, end: 30 },
+      { text: 'А оно, в свою очередь, создаёт ток во второй обмотке.', start: 30, end: 35 },
+    ],
+    // Сцена 4: 35-50 сек
+    [
+      { text: 'Математика проста: сто витков против десяти.', start: 35, end: 40 },
+      { text: 'Десять тысяч вольт превращаются в одну тысячу.', start: 40, end: 45 },
+      { text: 'В десять раз меньше! Это понижающий трансформатор.', start: 45, end: 50 },
+    ],
+    // Сцена 5: 50-58 сек
+    [
+      { text: 'Электростанция выдаёт сто десять тысяч вольт!', start: 50, end: 54 },
+      { text: 'А в твоей розетке — всего двести двадцать. В пятьсот раз меньше!', start: 54, end: 58 },
+    ],
+    // Сцена 6: 58-60 сек
+    [
+      { text: 'Теперь ты знаешь секрет! Подписывайся!', start: 58, end: 60 },
+    ],
+  ];
 
   // Запись видео
   const [isRecording, setIsRecording] = useState(false);
   const [recordingProgress, setRecordingProgress] = useState(0);
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
   const isRecordingRef = useRef(false);
+
+  // Голосовая озвучка
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
+  const [currentSubtitle, setCurrentSubtitle] = useState('');
+  const speechSynthRef = useRef<SpeechSynthesis | null>(null);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // Fallback метод записи через MediaRecorder
   const startRecordingWithMediaRecorder = async (canvas: HTMLCanvasElement) => {
@@ -1752,6 +1914,17 @@ export default function TransformerAnimation() {
         >
           {isRecording ? '⏹ Стоп' : '⏺ Записать видео'}
         </button>
+        <button
+          onClick={toggleVoice}
+          disabled={isRecording}
+          className={`px-5 py-2 rounded-lg transition-all text-sm font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+            isVoiceEnabled
+              ? 'bg-purple-600/20 border border-purple-500/40 text-purple-300 hover:bg-purple-600/30'
+              : 'bg-gray-600/20 border border-gray-500/40 text-gray-300 hover:bg-gray-600/30'
+          }`}
+        >
+          {isVoiceEnabled ? '🔊 Озвучка ВКЛ' : '🔇 Озвучка ВЫКЛ'}
+        </button>
       </div>
 
       {isRecording && (
@@ -1820,8 +1993,21 @@ export default function TransformerAnimation() {
 
       <div className="mt-4 text-center text-[10px] text-gray-600 max-w-md space-y-1">
         <p>🎬 Визуализация в стиле 3Blue1Brown • Canvas 2D • 60 FPS</p>
-        <p className="text-gray-500">💡 Совет: Запишите видео и добавьте трендовую музыку для TikTok/Reels</p>
+        <p className="text-gray-500">💡 Совет: Включите озвучку и запишите видео для TikTok/Reels</p>
         <p className="text-gray-500">🔥 Хэштеги: #физика #наука #трансформатор #образование #wow</p>
+      </div>
+
+      {/* Инструкция по сохранению */}
+      <div className="mt-6 max-w-2xl bg-gray-800/30 border border-gray-700/50 rounded-xl p-4 text-left">
+        <h3 className="text-sm font-bold text-white mb-2">📥 Как сохранить видео с озвучкой:</h3>
+        <ol className="text-xs text-gray-400 space-y-1 list-decimal list-inside">
+          <li>Включите озвучку кнопкой "🔊 Озвучка ВКЛ"</li>
+          <li>Нажмите "⏺ Записать видео" — начнётся запись 60 секунд</li>
+          <li>Дождитесь окончания — файл WebM скачается автоматически</li>
+          <li>Конвертируйте WebM в MP4 онлайн: <span className="text-cyan-400">cloudconvert.com</span></li>
+          <li>Загрузите MP4 на GitHub: создайте репозиторий → "Add file" → "Upload files"</li>
+        </ol>
+        <p className="text-xs text-gray-500 mt-2">💡 Альтернатива: используйте OBS Studio для записи экрана с системным звуком</p>
       </div>
     </div>
   );
