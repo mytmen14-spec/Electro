@@ -64,59 +64,58 @@ function drawGlowText(
   ctx.shadowBlur = 0;
 }
 
-// ТИТРЫ СВЕРХУ — описание каждой сцены
+// ТИТРЫ СВЕРХУ — вирусные заголовки
 const SCENE_CAPTIONS = [
-  { title: '🔥 ЭТО УПРАВЛЯЕТ ВСЕМ', subtitle: 'Без этого устройства не было бы электричества' },
-  { title: '📐 ИЗ ЧЕГО СОСТОИТ?', subtitle: 'Сердечник из стали + медные обмотки' },
-  { title: '🧲 КАК РАБОТАЕТ?', subtitle: 'Ток → магнитное поле → индуцирует напряжение' },
-  { title: '⚡ ФОРМУЛА ТРАНСФОРМАЦИИ', subtitle: 'Больше витков = выше напряжение' },
-  { title: '🏙️ ЗАЧЕМ НУЖЕН?', subtitle: 'Понижает 110 000В до безопасных 220В' },
-  { title: '🔔 ПОДПИСЫВАЙСЯ!', subtitle: 'Физика проще, чем кажется!' },
+  { title: '🔥 99% ЛЮДЕЙ НЕ ЗНАЮТ', subtitle: 'Как работает ЭТО устройство в каждом доме' },
+  { title: '📐 ПРОЩЕ ЧЕМ КАЖЕТСЯ', subtitle: 'Всего 3 детали = магия физики ✨' },
+  { title: '🧲 ЭТО КАК ВОЛШЕБСТВО', subtitle: 'Но это чистая физика!' },
+  { title: '⚡ ВАУ-ЭФФЕКТ', subtitle: '110 000В → 220В за секунду!' },
+  { title: '🏙️ БЕЗ ЭТОГО НЕТ WI-FI', subtitle: 'Трансформаторы везде!' },
+  { title: '🔔 ПОДПИШИСЬ!', subtitle: 'Ещё больше крутой физики!' },
 ];
 
-// Поясняющие титры для каждой сцены
+// Поясняющие титры — вирусные факты и метафоры
 const EXPLANATION_TITLES = [
-  // Сцена 1: Вступление
+  // Сцена 1: Вступление — ШОК-ФАКТЫ
   [
-    { text: 'Трансформатор — устройство,', x: 'center', y: 0.7, start: 0.3, end: 0.5, color: '#ffffff', size: 24 },
-    { text: 'которое изменяет напряжение', x: 'center', y: 0.75, start: 0.35, end: 0.55, color: '#00d4ff', size: 24 },
-    { text: 'без изменения мощности', x: 'center', y: 0.8, start: 0.4, end: 0.6, color: '#ffffff', size: 24 },
+    { text: '💡 Без трансформаторов', x: 'center', y: 0.68, start: 0.3, end: 0.5, color: '#ffd700', size: 26 },
+    { text: 'твой телефон НЕ РАБОТАЛ БЫ!', x: 'center', y: 0.73, start: 0.35, end: 0.55, color: '#ff6b35', size: 24 },
+    { text: '📱 → 🔌 → ТРАНСФОРМАТОР', x: 'center', y: 0.8, start: 0.45, end: 0.65, color: '#00d4ff', size: 22 },
   ],
-  // Сцена 2: Компоненты
+  // Сцена 2: Компоненты — ВИЗУАЛЬНЫЕ МЕТАФОРЫ
   [
-    { text: 'Сердечник из тонких пластин', x: 'center', y: 0.85, start: 0.15, end: 0.3, color: '#8892b0', size: 18 },
-    { text: 'уменьшает потери на вихревые токи', x: 'center', y: 0.89, start: 0.18, end: 0.33, color: '#64748b', size: 16 },
-    { text: 'Первичная обмотка создаёт', x: 'center', y: 0.85, start: 0.35, end: 0.5, color: '#ff6b35', size: 18 },
-    { text: 'переменное магнитное поле', x: 'center', y: 0.89, start: 0.38, end: 0.53, color: '#ff6b35', size: 16 },
-    { text: 'Вторичная обмотка "ловит"', x: 'center', y: 0.85, start: 0.6, end: 0.75, color: '#f7931e', size: 18 },
-    { text: 'изменяющийся магнитный поток', x: 'center', y: 0.89, start: 0.63, end: 0.78, color: '#f7931e', size: 16 },
+    { text: '🏗️ Представь водопровод:', x: 'center', y: 0.82, start: 0.15, end: 0.35, color: '#ffffff', size: 22 },
+    { text: 'Сердечник = труба', x: 'center', y: 0.87, start: 0.2, end: 0.4, color: '#8892b0', size: 20 },
+    { text: 'Обмотки = насосы', x: 'center', y: 0.91, start: 0.25, end: 0.45, color: '#00d4ff', size: 20 },
+    { text: '⚡ Факт: весит до 300 тонн!', x: 'center', y: 0.96, start: 0.6, end: 0.8, color: '#ffd700', size: 18 },
   ],
-  // Сцена 3: Магнитный поток
+  // Сцена 3: Магнитный поток — ВАУ-ЭФФЕКТ
   [
-    { text: 'Закон электромагнитной индукции:', x: 'center', y: 0.82, start: 0.2, end: 0.4, color: '#00d4ff', size: 20 },
-    { text: 'Изменяющийся магнитный поток', x: 'center', y: 0.86, start: 0.25, end: 0.45, color: '#ffffff', size: 18 },
-    { text: 'создаёт ЭДС в обмотке', x: 'center', y: 0.9, start: 0.3, end: 0.5, color: '#ffffff', size: 18 },
-    { text: 'ЭДС = -dΦ/dt', x: 'center', y: 0.95, start: 0.4, end: 0.6, color: '#ffd700', size: 22 },
+    { text: '🧲 Магия? НЕТ — ФИЗИКА!', x: 'center', y: 0.82, start: 0.2, end: 0.4, color: '#ff6b35', size: 24 },
+    { text: 'Ток создаёт магнитное поле', x: 'center', y: 0.87, start: 0.3, end: 0.5, color: '#00d4ff', size: 20 },
+    { text: 'Магнитное поле создаёт ток', x: 'center', y: 0.91, start: 0.4, end: 0.6, color: '#00d4ff', size: 20 },
+    { text: '⚡ Это работает 140 лет!', x: 'center', y: 0.96, start: 0.7, end: 0.9, color: '#ffd700', size: 18 },
   ],
-  // Сцена 4: Преобразование
+  // Сцена 4: Преобразование — БОЛЬШИЕ ЦИФРЫ
   [
-    { text: 'Коэффициент трансформации:', x: 'center', y: 0.82, start: 0.15, end: 0.35, color: '#00d4ff', size: 20 },
-    { text: 'k = N₂/N₁ = U₂/U₁', x: 'center', y: 0.87, start: 0.2, end: 0.4, color: '#ffd700', size: 24 },
-    { text: 'Если N₂ > N₁ → U₂ > U₁', x: 'center', y: 0.92, start: 0.6, end: 0.8, color: '#f7931e', size: 18 },
-    { text: '(повышающий)', x: 'center', y: 0.96, start: 0.65, end: 0.85, color: '#8892b0', size: 16 },
+    { text: '🔢 МАТЕМАТИКА ПРОСТА:', x: 'center', y: 0.82, start: 0.15, end: 0.35, color: '#ffffff', size: 22 },
+    { text: '1000 витков → 100 витков', x: 'center', y: 0.87, start: 0.2, end: 0.4, color: '#ff6b35', size: 20 },
+    { text: '10 000В → 1 000В', x: 'center', y: 0.92, start: 0.3, end: 0.5, color: '#ffd700', size: 24 },
+    { text: '💡 В 10 раз меньше!', x: 'center', y: 0.97, start: 0.6, end: 0.8, color: '#00d4ff', size: 22 },
   ],
-  // Сцена 5: Применение
+  // Сцена 5: Применение — КОНТРАСТ МАСШТАБОВ
   [
-    { text: 'Для передачи энергии на расстояние', x: 'center', y: 0.82, start: 0.15, end: 0.35, color: '#ffffff', size: 18 },
-    { text: 'повышают напряжение до 110-500 кВ', x: 'center', y: 0.86, start: 0.2, end: 0.4, color: '#ffd700', size: 18 },
-    { text: 'Это уменьшает потери в проводах', x: 'center', y: 0.9, start: 0.25, end: 0.45, color: '#00d4ff', size: 18 },
-    { text: 'Перед потребителем понижают до 220В', x: 'center', y: 0.94, start: 0.5, end: 0.7, color: '#ff6b35', size: 18 },
+    { text: '🏭 Электростанция:', x: 'center', y: 0.82, start: 0.15, end: 0.35, color: '#ffd700', size: 20 },
+    { text: '110 000 ВОЛЬТ!', x: 'center', y: 0.87, start: 0.2, end: 0.4, color: '#ff6b35', size: 26 },
+    { text: '🏠 Твоя розетка:', x: 'center', y: 0.92, start: 0.5, end: 0.7, color: '#00d4ff', size: 20 },
+    { text: '220 ВОЛЬТ (в 500 раз меньше!)', x: 'center', y: 0.97, start: 0.55, end: 0.75, color: '#ffffff', size: 22 },
   ],
-  // Сцена 6: Финал
+  // Сцена 6: Финал — ФИНАЛЬНЫЙ ВАУ-МОМЕНТ
   [
-    { text: 'Трансформаторы работают', x: 'center', y: 0.75, start: 0.1, end: 0.4, color: '#ffffff', size: 22 },
-    { text: 'на основе электромагнитной индукции', x: 'center', y: 0.8, start: 0.15, end: 0.45, color: '#00d4ff', size: 20 },
-    { text: 'КПД достигает 99%', x: 'center', y: 0.87, start: 0.3, end: 0.5, color: '#ffd700', size: 24 },
+    { text: '🌍 В мире 50 МИЛЛИАРДОВ', x: 'center', y: 0.73, start: 0.1, end: 0.35, color: '#ffd700', size: 24 },
+    { text: 'трансформаторов!', x: 'center', y: 0.78, start: 0.15, end: 0.4, color: '#ff6b35', size: 26 },
+    { text: '⚡ КПД 99% — лучше не бывает!', x: 'center', y: 0.85, start: 0.3, end: 0.55, color: '#00d4ff', size: 22 },
+    { text: '🔥 Теперь ты знаешь секрет!', x: 'center', y: 0.92, start: 0.5, end: 0.7, color: '#ffffff', size: 24 },
   ],
 ];
 
@@ -151,13 +150,129 @@ function drawExplanationTitles(
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       
-      // Свечение
+      // Усиленное свечение для вирусных моментов
       ctx.shadowColor = title.color;
-      ctx.shadowBlur = 12;
+      ctx.shadowBlur = 20;
       ctx.fillStyle = title.color;
       ctx.fillText(title.text, x, y);
       
+      // Двойное свечение для акцентов
+      if (title.size >= 24) {
+        ctx.globalAlpha = alpha * 0.3;
+        ctx.fillText(title.text, x, y);
+      }
+      
       ctx.shadowBlur = 0;
+    }
+  }
+}
+
+// Визуальные эффекты для вирусных моментов
+function drawViralEffects(
+  ctx: CanvasRenderingContext2D,
+  sceneIdx: number,
+  sceneProgress: number,
+  time: number,
+  W: number,
+  H: number,
+  scale: number
+) {
+  const cx = W / 2;
+  const cy = H / 2;
+
+  // Сцена 1: Взрыв энергии при появлении
+  if (sceneIdx === 0 && sceneProgress > 0.1 && sceneProgress < 0.3) {
+    const burstProgress = (sceneProgress - 0.1) / 0.2;
+    const burstRadius = burstProgress * 300 * scale;
+    const burstAlpha = (1 - burstProgress) * 0.6;
+    
+    ctx.globalAlpha = burstAlpha;
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 4 * scale;
+    ctx.beginPath();
+    ctx.arc(cx, cy, burstRadius, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Лучи
+    for (let i = 0; i < 12; i++) {
+      const angle = (i * Math.PI * 2) / 12;
+      const len = burstRadius * 1.5;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(angle) * burstRadius * 0.8, cy + Math.sin(angle) * burstRadius * 0.8);
+      ctx.lineTo(cx + Math.cos(angle) * len, cy + Math.sin(angle) * len);
+      ctx.stroke();
+    }
+  }
+
+  // Сцена 4: Большие цифры с эффектом пульсации
+  if (sceneIdx === 3 && sceneProgress > 0.2 && sceneProgress < 0.5) {
+    const pulse = Math.sin(time * 4) * 0.1 + 1;
+    const alpha = Math.min(1, (sceneProgress - 0.2) / 0.1);
+    
+    ctx.save();
+    ctx.translate(cx, cy + 100 * scale);
+    ctx.scale(pulse, pulse);
+    ctx.globalAlpha = alpha * 0.8;
+    
+    ctx.font = `bold ${80 * scale}px 'Segoe UI', Arial, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = '#ffd700';
+    ctx.shadowBlur = 30;
+    ctx.fillStyle = '#ffd700';
+    ctx.fillText('10x', 0, 0);
+    
+    ctx.restore();
+  }
+
+  // Сцена 5: Контраст масштабов
+  if (sceneIdx === 4 && sceneProgress > 0.3 && sceneProgress < 0.6) {
+    const alpha = Math.min(1, (sceneProgress - 0.3) / 0.1);
+    
+    // Левая сторона — высокое напряжение
+    ctx.globalAlpha = alpha * 0.9;
+    ctx.font = `bold ${50 * scale}px 'Segoe UI', Arial, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.shadowColor = '#ff6b35';
+    ctx.shadowBlur = 25;
+    ctx.fillStyle = '#ff6b35';
+    ctx.fillText('110kV', cx - 150 * scale, cy + 150 * scale);
+    
+    // Стрелка
+    ctx.font = `bold ${40 * scale}px 'Segoe UI', Arial, sans-serif`;
+    ctx.fillStyle = '#00d4ff';
+    ctx.fillText('→', cx, cy + 150 * scale);
+    
+    // Правая сторона — низкое напряжение
+    ctx.shadowColor = '#00d4ff';
+    ctx.fillStyle = '#00d4ff';
+    ctx.fillText('220V', cx + 150 * scale, cy + 150 * scale);
+    
+    ctx.shadowBlur = 0;
+  }
+
+  // Сцена 6: Финальный взрыв частиц
+  if (sceneIdx === 5 && sceneProgress > 0.2 && sceneProgress < 0.5) {
+    const burstProgress = (sceneProgress - 0.2) / 0.3;
+    
+    for (let i = 0; i < 30; i++) {
+      const angle = (i * Math.PI * 2) / 30 + time * 2;
+      const radius = (100 + burstProgress * 200) * scale;
+      const px = cx + Math.cos(angle) * radius;
+      const py = cy + Math.sin(angle) * radius;
+      const size = (3 + Math.sin(time * 5 + i) * 2) * scale;
+      
+      ctx.globalAlpha = (1 - burstProgress) * 0.8;
+      ctx.beginPath();
+      ctx.arc(px, py, size, 0, Math.PI * 2);
+      ctx.fillStyle = i % 3 === 0 ? '#ffd700' : i % 3 === 1 ? '#00d4ff' : '#ff6b35';
+      ctx.fill();
+      
+      // Свечение
+      ctx.globalAlpha = (1 - burstProgress) * 0.3;
+      ctx.beginPath();
+      ctx.arc(px, py, size * 3, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 }
@@ -288,63 +403,94 @@ function getSceneProgress(time: number, idx: number) {
 function renderScene1(ctx: CanvasRenderingContext2D, time: number, cx: number, cy: number, scale: number) {
   const p = getSceneProgress(time, 0);
   
-  // ХУК: Первые 2 секунды - мощное вступление
+  // ХУК: Первые 2 секунды - СУПЕР-ЦЕПЛЯЮЩЕЕ вступление
   if (p < 0.25) {
     const hookProgress = p / 0.25;
     
-    // Вспышка в начале
-    if (hookProgress < 0.15) {
-      const flash = 1 - hookProgress / 0.15;
-      ctx.globalAlpha = flash * 0.9;
-      ctx.fillStyle = '#00d4ff';
+    // МЕГА-вспышка в начале
+    if (hookProgress < 0.2) {
+      const flash = 1 - hookProgress / 0.2;
+      ctx.globalAlpha = flash;
+      
+      // Градиентная вспышка
+      const flashGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 500 * scale);
+      flashGrad.addColorStop(0, '#ffffff');
+      flashGrad.addColorStop(0.3, '#ffd700');
+      flashGrad.addColorStop(0.6, '#00d4ff');
+      flashGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = flashGrad;
       ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     }
     
-    // Электрические разряды
+    // Электрические разряды — больше и ярче
     if (hookProgress > 0.05) {
       const sparkAlpha = Math.min(1, (hookProgress - 0.05) / 0.1);
-      for (let i = 0; i < 8; i++) {
-        const angle = (time * 8 + i * Math.PI / 4);
-        const len = (150 + Math.sin(time * 15 + i * 3) * 80) * scale;
-        const sx = cx + Math.cos(angle) * 30 * scale;
-        const sy = cy + Math.sin(angle) * 30 * scale;
+      for (let i = 0; i < 16; i++) {
+        const angle = (time * 10 + i * Math.PI / 8);
+        const len = (200 + Math.sin(time * 15 + i * 3) * 100) * scale;
+        const sx = cx + Math.cos(angle) * 40 * scale;
+        const sy = cy + Math.sin(angle) * 40 * scale;
         const ex = cx + Math.cos(angle) * len;
         const ey = cy + Math.sin(angle) * len;
         
-        ctx.globalAlpha = sparkAlpha * 0.6 * (Math.sin(time * 20 + i * 5) * 0.5 + 0.5);
-        drawGlowLine(ctx, sx, sy, ex, ey, '#00d4ff', 2 * scale, 12 * scale);
+        ctx.globalAlpha = sparkAlpha * 0.8 * (Math.sin(time * 25 + i * 5) * 0.5 + 0.5);
+        drawGlowLine(ctx, sx, sy, ex, ey, i % 2 === 0 ? '#00d4ff' : '#ffd700', 3 * scale, 15 * scale);
       }
     }
     
-    // Большой цепляющий текст
+    // Большой цепляющий текст с эффектом "печатающейся машины"
     const textAlpha = hookProgress < 0.1 ? easeOut(hookProgress / 0.1) : hookProgress > 0.75 ? 1 - easeInOut((hookProgress - 0.75) / 0.25) : 1;
     ctx.globalAlpha = textAlpha;
     
-    // Масштабирование текста
-    const textScale = 1 + (1 - hookProgress) * 0.4;
-    const shake = hookProgress < 0.2 ? Math.sin(time * 30) * 3 * scale * (1 - hookProgress / 0.2) : 0;
+    // Масштабирование и тряска
+    const textScale = 1 + (1 - hookProgress) * 0.5;
+    const shake = hookProgress < 0.2 ? Math.sin(time * 35) * 4 * scale * (1 - hookProgress / 0.2) : 0;
     ctx.save();
     ctx.translate(cx + shake, cy);
     ctx.scale(textScale, textScale);
     
-    drawGlowText(ctx, '⚡ ЭТО УПРАВЛЯЕТ', 0, -90 * scale, '#ffd700', 44 * scale, '#ffd700');
-    drawGlowText(ctx, 'ВСЕЙ ЭНЕРГИЕЙ', 0, -25 * scale, '#ffffff', 52 * scale, '#ffd700');
-    drawGlowText(ctx, 'ПЛАНЕТЫ', 0, 55 * scale, '#ff6b35', 62 * scale, '#ff6b35');
+    // ГЛАВНЫЙ ХУК — вирусный заголовок
+    drawGlowText(ctx, '🔥 99% ЛЮДЕЙ', 0, -100 * scale, '#ff6b35', 50 * scale, '#ff6b35');
+    drawGlowText(ctx, 'НЕ ЗНАЮТ', 0, -35 * scale, '#ffd700', 60 * scale, '#ffd700');
+    drawGlowText(ctx, 'КАК ЭТО РАБОТАЕТ!', 0, 40 * scale, '#ffffff', 55 * scale, '#00d4ff');
+    drawGlowText(ctx, '⚡', 0, 100 * scale, '#ffd700', 70 * scale, '#ffd700');
     
     ctx.restore();
     
-    // Пульсирующие кольца
+    // Пульсирующие кольца — больше и ярче
     if (hookProgress > 0.1) {
-      for (let r = 0; r < 3; r++) {
-        const ringProgress = ((hookProgress - 0.1) * 2 + r * 0.3) % 1;
-        const ringRadius = ringProgress * 300 * scale;
-        const ringAlpha = (1 - ringProgress) * 0.4;
+      for (let r = 0; r < 5; r++) {
+        const ringProgress = ((hookProgress - 0.1) * 2.5 + r * 0.2) % 1;
+        const ringRadius = ringProgress * 400 * scale;
+        const ringAlpha = (1 - ringProgress) * 0.5;
         ctx.globalAlpha = ringAlpha;
         ctx.beginPath();
         ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = '#00d4ff';
-        ctx.lineWidth = 2 * scale;
+        ctx.strokeStyle = r % 2 === 0 ? '#00d4ff' : '#ffd700';
+        ctx.lineWidth = 3 * scale;
         ctx.stroke();
+      }
+    }
+    
+    // Летящие частицы
+    if (hookProgress > 0.15) {
+      for (let i = 0; i < 20; i++) {
+        const angle = (time * 3 + i * Math.PI * 2 / 20);
+        const radius = (150 + Math.sin(time * 2 + i) * 50) * scale;
+        const px = cx + Math.cos(angle) * radius;
+        const py = cy + Math.sin(angle) * radius;
+        
+        ctx.globalAlpha = 0.7;
+        ctx.beginPath();
+        ctx.arc(px, py, 4 * scale, 0, Math.PI * 2);
+        ctx.fillStyle = i % 3 === 0 ? '#ffd700' : i % 3 === 1 ? '#00d4ff' : '#ff6b35';
+        ctx.fill();
+        
+        // Свечение
+        ctx.globalAlpha = 0.2;
+        ctx.beginPath();
+        ctx.arc(px, py, 12 * scale, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
   }
@@ -1019,27 +1165,117 @@ function renderScene5(ctx: CanvasRenderingContext2D, time: number, cx: number, c
 
 function renderScene6(ctx: CanvasRenderingContext2D, time: number, cx: number, cy: number, scale: number) {
   const p = getSceneProgress(time, 5);
-  const pulse = Math.sin(time * 4) * 0.1 + 1;
-  const alpha = easeOut(Math.min(1, p / 0.3));
+  const pulse = Math.sin(time * 4) * 0.12 + 1;
+  const alpha = easeOut(Math.min(1, p / 0.25));
   
+  // Фоновое свечение
+  ctx.globalAlpha = alpha * 0.3;
+  const bgGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 400 * scale);
+  bgGlow.addColorStop(0, '#00d4ff');
+  bgGlow.addColorStop(0.5, '#ffd700');
+  bgGlow.addColorStop(1, 'transparent');
+  ctx.fillStyle = bgGlow;
+  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  
+  // Главный текст с пульсацией
   ctx.globalAlpha = alpha;
   ctx.save();
-  ctx.translate(cx, cy);
+  ctx.translate(cx, cy - 50 * scale);
   ctx.scale(pulse, pulse);
-  drawGlowText(ctx, 'ПОДПИСЫВАЙСЯ!', 0, -30 * scale, '#ffffff', 56 * scale, '#00d4ff');
-  drawGlowText(ctx, '🔔', 0, 60 * scale, '#ffd700', 52 * scale, '#ffd700');
+  
+  // "Теперь ты знаешь!"
+  drawGlowText(ctx, '🎉 ТЕПЕРЬ ТЫ', 0, -80 * scale, '#ffffff', 48 * scale, '#00d4ff');
+  drawGlowText(ctx, 'ЗНАЕШЬ СЕКРЕТ!', 0, -20 * scale, '#ffd700', 56 * scale, '#ffd700');
+  
   ctx.restore();
   
-  for (let i = 0; i < 25; i++) {
-    const angle = time * 0.5 + i * Math.PI * 2 / 25;
-    const radius = 250 * scale + Math.sin(time * 2 + i) * 40 * scale;
+  // Призыв к действию
+  if (p > 0.3) {
+    const ctaAlpha = easeOut((p - 0.3) / 0.2);
+    ctx.globalAlpha = ctaAlpha;
+    
+    // Кнопка подписки
+    const btnY = cy + 80 * scale;
+    const btnW = 280 * scale;
+    const btnH = 60 * scale;
+    
+    // Фон кнопки
+    const btnGrad = ctx.createLinearGradient(cx - btnW / 2, btnY, cx + btnW / 2, btnY);
+    btnGrad.addColorStop(0, '#ff6b35');
+    btnGrad.addColorStop(1, '#ffd700');
+    ctx.fillStyle = btnGrad;
+    
+    // Скруглённый прямоугольник
+    const radius = 15 * scale;
+    ctx.beginPath();
+    ctx.moveTo(cx - btnW / 2 + radius, btnY - btnH / 2);
+    ctx.lineTo(cx + btnW / 2 - radius, btnY - btnH / 2);
+    ctx.quadraticCurveTo(cx + btnW / 2, btnY - btnH / 2, cx + btnW / 2, btnY - btnH / 2 + radius);
+    ctx.lineTo(cx + btnW / 2, btnY + btnH / 2 - radius);
+    ctx.quadraticCurveTo(cx + btnW / 2, btnY + btnH / 2, cx + btnW / 2 - radius, btnY + btnH / 2);
+    ctx.lineTo(cx - btnW / 2 + radius, btnY + btnH / 2);
+    ctx.quadraticCurveTo(cx - btnW / 2, btnY + btnH / 2, cx - btnW / 2, btnY + btnH / 2 - radius);
+    ctx.lineTo(cx - btnW / 2, btnY - btnH / 2 + radius);
+    ctx.quadraticCurveTo(cx - btnW / 2, btnY - btnH / 2, cx - btnW / 2 + radius, btnY - btnH / 2);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Свечение кнопки
+    ctx.shadowColor = '#ffd700';
+    ctx.shadowBlur = 20;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    // Текст кнопки
+    ctx.font = `bold ${24 * scale}px 'Segoe UI', Arial, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('🔔 ПОДПИШИСЬ!', cx, btnY);
+    
+    // Дополнительный текст
+    if (p > 0.5) {
+      const subAlpha = easeOut((p - 0.5) / 0.2);
+      ctx.globalAlpha = subAlpha;
+      drawGlowText(ctx, 'Узнай больше крутой физики!', cx, btnY + 50 * scale, '#00d4ff', 20 * scale, '#00d4ff');
+    }
+  }
+  
+  // Вихрь частиц
+  for (let i = 0; i < 40; i++) {
+    const angle = time * 2 + i * Math.PI * 2 / 40;
+    const radius = (200 + Math.sin(time * 3 + i * 0.5) * 80) * scale;
     const px = cx + Math.cos(angle) * radius;
     const py = cy + Math.sin(angle) * radius;
-    ctx.globalAlpha = alpha * 0.6;
+    const size = (3 + Math.sin(time * 5 + i) * 2) * scale;
+    
+    ctx.globalAlpha = alpha * 0.7;
     ctx.beginPath();
-    ctx.arc(px, py, 4 * scale, 0, Math.PI * 2);
-    ctx.fillStyle = i % 2 === 0 ? '#00d4ff' : '#ff6b35';
+    ctx.arc(px, py, size, 0, Math.PI * 2);
+    ctx.fillStyle = i % 4 === 0 ? '#ffd700' : i % 4 === 1 ? '#00d4ff' : i % 4 === 2 ? '#ff6b35' : '#ffffff';
     ctx.fill();
+    
+    // Свечение
+    ctx.globalAlpha = alpha * 0.2;
+    ctx.beginPath();
+    ctx.arc(px, py, size * 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  // Молнии по краям
+  if (p > 0.4) {
+    const lightningAlpha = easeOut((p - 0.4) / 0.2);
+    for (let i = 0; i < 8; i++) {
+      const angle = (time * 5 + i * Math.PI / 4);
+      const len = (300 + Math.sin(time * 20 + i * 7) * 100) * scale;
+      const sx = cx + Math.cos(angle) * 100 * scale;
+      const sy = cy + Math.sin(angle) * 100 * scale;
+      const ex = cx + Math.cos(angle) * len;
+      const ey = cy + Math.sin(angle) * len;
+      
+      ctx.globalAlpha = lightningAlpha * 0.6 * (Math.sin(time * 30 + i * 10) * 0.5 + 0.5);
+      drawGlowLine(ctx, sx, sy, ex, ey, '#ffd700', 2 * scale, 10 * scale);
+    }
   }
 }
 
@@ -1113,6 +1349,9 @@ export default function TransformerAnimation() {
 
     // Поясняющие титры
     drawExplanationTitles(ctx, captionIdx, captionSceneP, W, H, scale);
+
+    // Вирусные визуальные эффекты
+    drawViralEffects(ctx, captionIdx, captionSceneP, time, W, H, scale);
 
     // Полоса прогресса
     ctx.globalAlpha = 0.6;
@@ -1479,9 +1718,9 @@ export default function TransformerAnimation() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#0a0e27] p-4 select-none">
       <div className="text-center mb-3">
         <h1 className="text-xl md:text-3xl font-bold text-white mb-1 tracking-tight">
-          ⚡ Как работает трансформатор
+          🔥 Как работает трансформатор
         </h1>
-        <p className="text-xs md:text-sm text-gray-400">Интерактивная анимация • 60 секунд</p>
+        <p className="text-xs md:text-sm text-gray-400">Вирусная анимация • 60 секунд • Готово для TikTok/Reels</p>
       </div>
 
       <div className="relative w-full max-w-[380px] aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl shadow-cyan-500/10 border border-gray-700/40">
@@ -1579,8 +1818,10 @@ export default function TransformerAnimation() {
         ))}
       </div>
 
-      <div className="mt-4 text-center text-[10px] text-gray-600 max-w-md">
-        <p>Визуализация в стиле 3Blue1Brown • Canvas 2D • 60 FPS</p>
+      <div className="mt-4 text-center text-[10px] text-gray-600 max-w-md space-y-1">
+        <p>🎬 Визуализация в стиле 3Blue1Brown • Canvas 2D • 60 FPS</p>
+        <p className="text-gray-500">💡 Совет: Запишите видео и добавьте трендовую музыку для TikTok/Reels</p>
+        <p className="text-gray-500">🔥 Хэштеги: #физика #наука #трансформатор #образование #wow</p>
       </div>
     </div>
   );
