@@ -63,6 +63,103 @@ function drawGlowText(
   ctx.shadowBlur = 0;
 }
 
+// ТИТРЫ СВЕРХУ — описание каждой сцены
+const SCENE_CAPTIONS = [
+  { title: '🔥 ЭТО УПРАВЛЯЕТ ВСЕМ', subtitle: 'Без этого устройства не было бы электричества' },
+  { title: '📐 ИЗ ЧЕГО СОСТОИТ?', subtitle: 'Сердечник из стали + медные обмотки' },
+  { title: '🧲 КАК РАБОТАЕТ?', subtitle: 'Ток → магнитное поле → индуцирует напряжение' },
+  { title: '⚡ ФОРМУЛА ТРАНСФОРМАЦИИ', subtitle: 'Больше витков = выше напряжение' },
+  { title: '🏙️ ЗАЧЕМ НУЖЕН?', subtitle: 'Понижает 110 000В до безопасных 220В' },
+  { title: '🔔 ПОДПИСЫВАЙСЯ!', subtitle: 'Физика проще, чем кажется!' },
+];
+
+function drawCaption(
+  ctx: CanvasRenderingContext2D,
+  sceneIdx: number,
+  sceneProgress: number,
+  W: number,
+  scale: number
+) {
+  const caption = SCENE_CAPTIONS[sceneIdx];
+  if (!caption) return;
+  
+  // Для первой сцены: титр появляется только после хука
+  if (sceneIdx === 0 && sceneProgress < 0.3) return;
+  
+  // Появление и исчезновение титра
+  let alpha = 1;
+  if (sceneProgress < 0.12) {
+    alpha = easeOut(sceneProgress / 0.12);
+  } else if (sceneProgress > 0.88) {
+    alpha = 1 - easeInOut((sceneProgress - 0.88) / 0.12);
+  }
+  
+  const captionY = 80 * scale;
+  const barW = W - 50 * scale;
+  const barH = 90 * scale;
+  const barX = 25 * scale;
+  
+  // Фон титра
+  ctx.globalAlpha = alpha * 0.85;
+  const grad = ctx.createLinearGradient(barX, captionY - barH / 2, barX, captionY + barH / 2);
+  grad.addColorStop(0, 'rgba(10, 14, 39, 0.95)');
+  grad.addColorStop(0.5, 'rgba(15, 20, 50, 0.9)');
+  grad.addColorStop(1, 'rgba(10, 14, 39, 0.85)');
+  ctx.fillStyle = grad;
+  
+  // Скруглённый прямоугольник
+  const radius = 14 * scale;
+  ctx.beginPath();
+  ctx.moveTo(barX + radius, captionY - barH / 2);
+  ctx.lineTo(barX + barW - radius, captionY - barH / 2);
+  ctx.quadraticCurveTo(barX + barW, captionY - barH / 2, barX + barW, captionY - barH / 2 + radius);
+  ctx.lineTo(barX + barW, captionY + barH / 2 - radius);
+  ctx.quadraticCurveTo(barX + barW, captionY + barH / 2, barX + barW - radius, captionY + barH / 2);
+  ctx.lineTo(barX + radius, captionY + barH / 2);
+  ctx.quadraticCurveTo(barX, captionY + barH / 2, barX, captionY + barH / 2 - radius);
+  ctx.lineTo(barX, captionY - barH / 2 + radius);
+  ctx.quadraticCurveTo(barX, captionY - barH / 2, barX + radius, captionY - barH / 2);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Рамка
+  ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)';
+  ctx.lineWidth = 1.5 * scale;
+  ctx.stroke();
+  
+  // Акцентная линия сверху (градиентная)
+  ctx.globalAlpha = alpha;
+  const lineGrad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+  lineGrad.addColorStop(0, 'rgba(0, 212, 255, 0)');
+  lineGrad.addColorStop(0.3, '#00d4ff');
+  lineGrad.addColorStop(0.7, '#00d4ff');
+  lineGrad.addColorStop(1, 'rgba(0, 212, 255, 0)');
+  ctx.strokeStyle = lineGrad;
+  ctx.lineWidth = 2.5 * scale;
+  ctx.beginPath();
+  ctx.moveTo(barX + radius, captionY - barH / 2);
+  ctx.lineTo(barX + barW - radius, captionY - barH / 2);
+  ctx.stroke();
+  
+  // Заголовок титра
+  ctx.globalAlpha = alpha;
+  ctx.font = `bold ${22 * scale}px 'Segoe UI', Arial, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = '#00d4ff';
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(caption.title, W / 2, captionY - 14 * scale);
+  
+  // Подзаголовок
+  ctx.shadowBlur = 6;
+  ctx.font = `bold ${15 * scale}px 'Segoe UI', Arial, sans-serif`;
+  ctx.fillStyle = '#00d4ff';
+  ctx.fillText(caption.subtitle, W / 2, captionY + 18 * scale);
+  
+  ctx.shadowBlur = 0;
+}
+
 function drawGradientBg(
   ctx: CanvasRenderingContext2D,
   width: number, height: number,
@@ -102,53 +199,115 @@ function getSceneProgress(time: number, idx: number) {
 function renderScene1(ctx: CanvasRenderingContext2D, time: number, cx: number, cy: number, scale: number) {
   const p = getSceneProgress(time, 0);
   
-  // Заголовок
-  if (p < 0.6) {
-    const titleAlpha = p < 0.1 ? easeOut(p / 0.1) : p > 0.45 ? 1 - easeInOut((p - 0.45) / 0.15) : 1;
-    ctx.globalAlpha = titleAlpha;
-    drawGlowText(ctx, 'Как работает', cx, cy - 60 * scale, '#ffffff', 48 * scale, '#00d4ff');
-    drawGlowText(ctx, 'трансформатор', cx, cy + 10 * scale, '#00d4ff', 52 * scale, '#00d4ff');
+  // ХУК: Первые 2 секунды - мощное вступление
+  if (p < 0.25) {
+    const hookProgress = p / 0.25;
     
-    if (p > 0.15) {
-      const subAlpha = Math.min(1, (p - 0.15) / 0.1) * titleAlpha;
-      ctx.globalAlpha = subAlpha * 0.7;
-      drawGlowText(ctx, 'От физики до практики', cx, cy + 70 * scale, '#8892b0', 22 * scale, '#8892b0');
+    // Вспышка в начале
+    if (hookProgress < 0.15) {
+      const flash = 1 - hookProgress / 0.15;
+      ctx.globalAlpha = flash * 0.9;
+      ctx.fillStyle = '#00d4ff';
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
+    
+    // Электрические разряды
+    if (hookProgress > 0.05) {
+      const sparkAlpha = Math.min(1, (hookProgress - 0.05) / 0.1);
+      for (let i = 0; i < 8; i++) {
+        const angle = (time * 8 + i * Math.PI / 4);
+        const len = (150 + Math.sin(time * 15 + i * 3) * 80) * scale;
+        const sx = cx + Math.cos(angle) * 30 * scale;
+        const sy = cy + Math.sin(angle) * 30 * scale;
+        const ex = cx + Math.cos(angle) * len;
+        const ey = cy + Math.sin(angle) * len;
+        
+        ctx.globalAlpha = sparkAlpha * 0.6 * (Math.sin(time * 20 + i * 5) * 0.5 + 0.5);
+        drawGlowLine(ctx, sx, sy, ex, ey, '#00d4ff', 2 * scale, 12 * scale);
+      }
+    }
+    
+    // Большой цепляющий текст
+    const textAlpha = hookProgress < 0.1 ? easeOut(hookProgress / 0.1) : hookProgress > 0.75 ? 1 - easeInOut((hookProgress - 0.75) / 0.25) : 1;
+    ctx.globalAlpha = textAlpha;
+    
+    // Масштабирование текста
+    const textScale = 1 + (1 - hookProgress) * 0.4;
+    const shake = hookProgress < 0.2 ? Math.sin(time * 30) * 3 * scale * (1 - hookProgress / 0.2) : 0;
+    ctx.save();
+    ctx.translate(cx + shake, cy);
+    ctx.scale(textScale, textScale);
+    
+    drawGlowText(ctx, '⚡ ЭТО УПРАВЛЯЕТ', 0, -90 * scale, '#ffd700', 44 * scale, '#ffd700');
+    drawGlowText(ctx, 'ВСЕЙ ЭНЕРГИЕЙ', 0, -25 * scale, '#ffffff', 52 * scale, '#ffd700');
+    drawGlowText(ctx, 'ПЛАНЕТЫ', 0, 55 * scale, '#ff6b35', 62 * scale, '#ff6b35');
+    
+    ctx.restore();
+    
+    // Пульсирующие кольца
+    if (hookProgress > 0.1) {
+      for (let r = 0; r < 3; r++) {
+        const ringProgress = ((hookProgress - 0.1) * 2 + r * 0.3) % 1;
+        const ringRadius = ringProgress * 300 * scale;
+        const ringAlpha = (1 - ringProgress) * 0.4;
+        ctx.globalAlpha = ringAlpha;
+        ctx.beginPath();
+        ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = '#00d4ff';
+        ctx.lineWidth = 2 * scale;
+        ctx.stroke();
+      }
+    }
+  }
+  
+  // Основной заголовок
+  if (p >= 0.25 && p < 0.6) {
+    const titleProgress = (p - 0.25) / 0.35;
+    const titleAlpha = titleProgress < 0.15 ? easeOut(titleProgress / 0.15) : titleProgress > 0.85 ? 1 - easeInOut((titleProgress - 0.85) / 0.15) : 1;
+    ctx.globalAlpha = titleAlpha;
+    drawGlowText(ctx, 'Как работает', cx, cy - 80 * scale, '#ffffff', 56 * scale, '#00d4ff');
+    drawGlowText(ctx, 'ТРАНСФОРМАТОР', cx, cy + 10 * scale, '#00d4ff', 64 * scale, '#00d4ff');
+    
+    if (titleProgress > 0.2) {
+      const subAlpha = Math.min(1, (titleProgress - 0.2) / 0.15) * titleAlpha;
+      ctx.globalAlpha = subAlpha * 0.8;
+      drawGlowText(ctx, 'Сердце энергосистемы', cx, cy + 90 * scale, '#8892b0', 28 * scale, '#8892b0');
     }
   }
 
-  // Контур трансформатора
+  // Контур трансформатора (крупнее)
   if (p > 0.5) {
     const outlineAlpha = easeInOut((p - 0.5) / 0.5);
     ctx.globalAlpha = outlineAlpha * 0.6;
     
-    const coreW = 200 * scale;
-    const coreH = 300 * scale;
+    const coreW = 280 * scale;
+    const coreH = 400 * scale;
     const coreX = cx - coreW / 2;
-    const coreY = cy - coreH / 2 + 100 * scale;
+    const coreY = cy - coreH / 2 + 120 * scale;
     
     ctx.strokeStyle = '#2d3748';
-    ctx.lineWidth = 3 * scale;
+    ctx.lineWidth = 4 * scale;
     ctx.beginPath();
     ctx.rect(coreX, coreY, coreW, coreH);
     ctx.stroke();
     
-    const innerMargin = 40 * scale;
+    const innerMargin = 55 * scale;
     ctx.beginPath();
     ctx.rect(coreX + innerMargin, coreY + innerMargin, coreW - innerMargin * 2, coreH - innerMargin * 2);
     ctx.stroke();
     
-    // Контур обмоток
+    // Контур обмоток (крупнее)
     ctx.strokeStyle = '#ff6b35';
-    ctx.lineWidth = 2 * scale;
+    ctx.lineWidth = 3 * scale;
     ctx.globalAlpha = outlineAlpha * 0.4;
     
-    for (let i = 0; i < 6; i++) {
-      const oy = coreY + 30 * scale + i * 40 * scale;
+    for (let i = 0; i < 7; i++) {
+      const oy = coreY + 40 * scale + i * 50 * scale;
       ctx.beginPath();
-      ctx.ellipse(coreX - 20 * scale, oy, 30 * scale, 15 * scale, 0, 0, Math.PI * 2);
+      ctx.ellipse(coreX - 30 * scale, oy, 40 * scale, 20 * scale, 0, 0, Math.PI * 2);
       ctx.stroke();
       ctx.beginPath();
-      ctx.ellipse(coreX + coreW + 20 * scale, oy, 30 * scale, 15 * scale, 0, 0, Math.PI * 2);
+      ctx.ellipse(coreX + coreW + 30 * scale, oy, 40 * scale, 20 * scale, 0, 0, Math.PI * 2);
       ctx.stroke();
     }
   }
@@ -157,10 +316,10 @@ function renderScene1(ctx: CanvasRenderingContext2D, time: number, cx: number, c
 function renderScene2(ctx: CanvasRenderingContext2D, time: number, cx: number, cy: number, scale: number) {
   const p = getSceneProgress(time, 1);
   
-  const coreW = 220 * scale;
-  const coreH = 320 * scale;
+  const coreW = 300 * scale;
+  const coreH = 420 * scale;
   const coreX = cx - coreW / 2;
-  const coreY = cy - coreH / 2;
+  const coreY = cy - coreH / 2 + 30 * scale;
   
   // Сердечник
   const coreAppear = Math.min(1, p / 0.2);
@@ -173,16 +332,16 @@ function renderScene2(ctx: CanvasRenderingContext2D, time: number, cx: number, c
   ctx.fillStyle = coreGrad;
   ctx.fillRect(coreX, coreY, coreW, coreH);
   
-  const innerM = 50 * scale;
+  const innerM = 65 * scale;
   ctx.fillStyle = '#0a0e27';
   ctx.fillRect(coreX + innerM, coreY + innerM, coreW - innerM * 2, coreH - innerM * 2);
   
   // Линии ламинации
   ctx.strokeStyle = '#4a5568';
-  ctx.lineWidth = 0.5 * scale;
+  ctx.lineWidth = 0.7 * scale;
   ctx.globalAlpha = 0.3 * easeOut(coreAppear);
-  for (let i = 0; i < 20; i++) {
-    const ly = coreY + i * (coreH / 20);
+  for (let i = 0; i < 25; i++) {
+    const ly = coreY + i * (coreH / 25);
     ctx.beginPath();
     ctx.moveTo(coreX, ly);
     ctx.lineTo(coreX + innerM, ly);
@@ -197,8 +356,8 @@ function renderScene2(ctx: CanvasRenderingContext2D, time: number, cx: number, c
   if (p > 0.1 && p < 0.35) {
     const la = p < 0.15 ? easeOut((p - 0.1) / 0.05) : p > 0.3 ? 1 - easeInOut((p - 0.3) / 0.05) : 1;
     ctx.globalAlpha = la;
-    drawGlowText(ctx, 'Сердечник', cx, coreY + coreH + 40 * scale, '#8892b0', 22 * scale, '#4a5568');
-    drawGlowText(ctx, '(ламинированная сталь)', cx, coreY + coreH + 68 * scale, '#64748b', 15 * scale, '#4a5568');
+    drawGlowText(ctx, 'Сердечник', cx, coreY + coreH + 50 * scale, '#8892b0', 26 * scale, '#4a5568');
+    drawGlowText(ctx, '(ламинированная сталь)', cx, coreY + coreH + 82 * scale, '#64748b', 18 * scale, '#4a5568');
   }
   
   // Первичная обмотка
@@ -208,37 +367,37 @@ function renderScene2(ctx: CanvasRenderingContext2D, time: number, cx: number, c
     const numTurns = Math.floor(8 * easeOut(ca));
     
     for (let i = 0; i < numTurns; i++) {
-      const oy = coreY + 30 * scale + i * (coreH - 60 * scale) / 8;
+      const oy = coreY + 40 * scale + i * (coreH - 80 * scale) / 8;
       const phase = time * 2 + i * 0.5;
       
       ctx.globalAlpha = easeOut(ca);
       ctx.beginPath();
-      ctx.ellipse(coreX - 15 * scale, oy, 35 * scale, 12 * scale, 0, 0, Math.PI * 2);
+      ctx.ellipse(coreX - 20 * scale, oy, 45 * scale, 16 * scale, 0, 0, Math.PI * 2);
       ctx.strokeStyle = '#ff6b35';
-      ctx.lineWidth = 4 * scale;
+      ctx.lineWidth = 5 * scale;
       ctx.stroke();
       
       ctx.beginPath();
-      ctx.ellipse(coreX - 15 * scale, oy, 35 * scale, 12 * scale, 0, 0, Math.PI * 2);
+      ctx.ellipse(coreX - 20 * scale, oy, 45 * scale, 16 * scale, 0, 0, Math.PI * 2);
       ctx.strokeStyle = '#ff6b35';
-      ctx.lineWidth = 10 * scale;
-      ctx.globalAlpha = 0.12 * easeOut(ca);
+      ctx.lineWidth = 14 * scale;
+      ctx.globalAlpha = 0.15 * easeOut(ca);
       ctx.stroke();
       
-      const pulseA = (Math.sin(phase) * 0.5 + 0.5) * 0.3;
+      const pulseA = (Math.sin(phase) * 0.5 + 0.5) * 0.4;
       ctx.globalAlpha = pulseA * easeOut(ca);
       ctx.beginPath();
-      ctx.ellipse(coreX - 15 * scale, oy, 35 * scale, 12 * scale, 0, 0, Math.PI * 2);
+      ctx.ellipse(coreX - 20 * scale, oy, 45 * scale, 16 * scale, 0, 0, Math.PI * 2);
       ctx.strokeStyle = '#ffd700';
-      ctx.lineWidth = 6 * scale;
+      ctx.lineWidth = 8 * scale;
       ctx.stroke();
     }
     
     if (p > 0.3 && p < 0.55) {
       const la = p < 0.35 ? easeOut((p - 0.3) / 0.05) : p > 0.5 ? 1 - easeInOut((p - 0.5) / 0.05) : 1;
       ctx.globalAlpha = la;
-      drawGlowText(ctx, 'Первичная', coreX - 80 * scale, cy - 20 * scale, '#ff6b35', 18 * scale, '#ff6b35');
-      drawGlowText(ctx, 'обмотка (N₁)', coreX - 80 * scale, cy + 10 * scale, '#ff6b35', 18 * scale, '#ff6b35');
+      drawGlowText(ctx, 'Первичная', coreX - 100 * scale, cy - 20 * scale, '#ff6b35', 22 * scale, '#ff6b35');
+      drawGlowText(ctx, 'обмотка (N₁)', coreX - 100 * scale, cy + 15 * scale, '#ff6b35', 22 * scale, '#ff6b35');
     }
   }
   
@@ -249,37 +408,37 @@ function renderScene2(ctx: CanvasRenderingContext2D, time: number, cx: number, c
     const numTurns = Math.floor(8 * easeOut(ca));
     
     for (let i = 0; i < numTurns; i++) {
-      const oy = coreY + 30 * scale + i * (coreH - 60 * scale) / 8;
+      const oy = coreY + 40 * scale + i * (coreH - 80 * scale) / 8;
       const phase = time * 2 + i * 0.5 + Math.PI;
       
       ctx.globalAlpha = easeOut(ca);
       ctx.beginPath();
-      ctx.ellipse(coreX + coreW + 15 * scale, oy, 35 * scale, 12 * scale, 0, 0, Math.PI * 2);
+      ctx.ellipse(coreX + coreW + 20 * scale, oy, 45 * scale, 16 * scale, 0, 0, Math.PI * 2);
       ctx.strokeStyle = '#f7931e';
-      ctx.lineWidth = 4 * scale;
+      ctx.lineWidth = 5 * scale;
       ctx.stroke();
       
       ctx.beginPath();
-      ctx.ellipse(coreX + coreW + 15 * scale, oy, 35 * scale, 12 * scale, 0, 0, Math.PI * 2);
+      ctx.ellipse(coreX + coreW + 20 * scale, oy, 45 * scale, 16 * scale, 0, 0, Math.PI * 2);
       ctx.strokeStyle = '#f7931e';
-      ctx.lineWidth = 10 * scale;
-      ctx.globalAlpha = 0.12 * easeOut(ca);
+      ctx.lineWidth = 14 * scale;
+      ctx.globalAlpha = 0.15 * easeOut(ca);
       ctx.stroke();
       
-      const pulseA = (Math.sin(phase) * 0.5 + 0.5) * 0.3;
+      const pulseA = (Math.sin(phase) * 0.5 + 0.5) * 0.4;
       ctx.globalAlpha = pulseA * easeOut(ca);
       ctx.beginPath();
-      ctx.ellipse(coreX + coreW + 15 * scale, oy, 35 * scale, 12 * scale, 0, 0, Math.PI * 2);
+      ctx.ellipse(coreX + coreW + 20 * scale, oy, 45 * scale, 16 * scale, 0, 0, Math.PI * 2);
       ctx.strokeStyle = '#ffd700';
-      ctx.lineWidth = 6 * scale;
+      ctx.lineWidth = 8 * scale;
       ctx.stroke();
     }
     
     if (p > 0.55 && p < 0.8) {
       const la = p < 0.6 ? easeOut((p - 0.55) / 0.05) : p > 0.75 ? 1 - easeInOut((p - 0.75) / 0.05) : 1;
       ctx.globalAlpha = la;
-      drawGlowText(ctx, 'Вторичная', coreX + coreW + 80 * scale, cy - 20 * scale, '#f7931e', 18 * scale, '#f7931e');
-      drawGlowText(ctx, 'обмотка (N₂)', coreX + coreW + 80 * scale, cy + 10 * scale, '#f7931e', 18 * scale, '#f7931e');
+      drawGlowText(ctx, 'Вторичная', coreX + coreW + 100 * scale, cy - 20 * scale, '#f7931e', 22 * scale, '#f7931e');
+      drawGlowText(ctx, 'обмотка (N₂)', coreX + coreW + 100 * scale, cy + 15 * scale, '#f7931e', 22 * scale, '#f7931e');
     }
   }
 }
@@ -287,10 +446,10 @@ function renderScene2(ctx: CanvasRenderingContext2D, time: number, cx: number, c
 function renderScene3(ctx: CanvasRenderingContext2D, time: number, cx: number, cy: number, scale: number) {
   const p = getSceneProgress(time, 2);
   
-  const coreW = 220 * scale;
-  const coreH = 320 * scale;
+  const coreW = 300 * scale;
+  const coreH = 420 * scale;
   const coreX = cx - coreW / 2;
-  const coreY = cy - coreH / 2;
+  const coreY = cy - coreH / 2 + 30 * scale;
   
   // Сердечник
   ctx.globalAlpha = 1;
@@ -301,47 +460,47 @@ function renderScene3(ctx: CanvasRenderingContext2D, time: number, cx: number, c
   ctx.fillStyle = coreGrad;
   ctx.fillRect(coreX, coreY, coreW, coreH);
   
-  const innerM = 50 * scale;
+  const innerM = 65 * scale;
   ctx.fillStyle = '#0a0e27';
   ctx.fillRect(coreX + innerM, coreY + innerM, coreW - innerM * 2, coreH - innerM * 2);
   
   // Первичная обмотка — пульсирует
   const primaryGlow = Math.sin(time * 3) * 0.3 + 0.7;
   for (let i = 0; i < 8; i++) {
-    const oy = coreY + 30 * scale + i * (coreH - 60 * scale) / 8;
+    const oy = coreY + 40 * scale + i * (coreH - 80 * scale) / 8;
     const phase = time * 3 + i * 0.5;
     
     ctx.globalAlpha = 1;
     ctx.beginPath();
-    ctx.ellipse(coreX - 15 * scale, oy, 35 * scale, 12 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(coreX - 20 * scale, oy, 45 * scale, 16 * scale, 0, 0, Math.PI * 2);
     ctx.strokeStyle = '#ff6b35';
-    ctx.lineWidth = 4 * scale;
+    ctx.lineWidth = 5 * scale;
     ctx.stroke();
     
     ctx.beginPath();
-    ctx.ellipse(coreX - 15 * scale, oy, 35 * scale, 12 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(coreX - 20 * scale, oy, 45 * scale, 16 * scale, 0, 0, Math.PI * 2);
     ctx.strokeStyle = '#ff6b35';
-    ctx.lineWidth = 14 * scale;
-    ctx.globalAlpha = 0.18 * primaryGlow;
+    ctx.lineWidth = 18 * scale;
+    ctx.globalAlpha = 0.2 * primaryGlow;
     ctx.stroke();
     
-    const pulseA = (Math.sin(phase) * 0.5 + 0.5) * 0.5;
+    const pulseA = (Math.sin(phase) * 0.5 + 0.5) * 0.6;
     ctx.globalAlpha = pulseA;
     ctx.beginPath();
-    ctx.ellipse(coreX - 15 * scale, oy, 35 * scale, 12 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(coreX - 20 * scale, oy, 45 * scale, 16 * scale, 0, 0, Math.PI * 2);
     ctx.strokeStyle = '#ffd700';
-    ctx.lineWidth = 6 * scale;
+    ctx.lineWidth = 8 * scale;
     ctx.stroke();
   }
   
   // Вторичная обмотка
   for (let i = 0; i < 8; i++) {
-    const oy = coreY + 30 * scale + i * (coreH - 60 * scale) / 8;
+    const oy = coreY + 40 * scale + i * (coreH - 80 * scale) / 8;
     ctx.globalAlpha = 0.7;
     ctx.beginPath();
-    ctx.ellipse(coreX + coreW + 15 * scale, oy, 35 * scale, 12 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(coreX + coreW + 20 * scale, oy, 45 * scale, 16 * scale, 0, 0, Math.PI * 2);
     ctx.strokeStyle = '#f7931e';
-    ctx.lineWidth = 4 * scale;
+    ctx.lineWidth = 5 * scale;
     ctx.stroke();
   }
   
@@ -353,30 +512,30 @@ function renderScene3(ctx: CanvasRenderingContext2D, time: number, cx: number, c
     for (let i = 0; i < 5; i++) {
       const lx = coreX + innerM + (i + 0.5) * (coreW - innerM * 2) / 5;
       ctx.globalAlpha = easeOut(fluxAppear) * fluxPulse * 0.8;
-      drawGlowLine(ctx, lx, coreY + 10 * scale, lx, coreY + coreH - 10 * scale, '#00d4ff', 2 * scale, 15 * scale);
+      drawGlowLine(ctx, lx, coreY + 15 * scale, lx, coreY + coreH - 15 * scale, '#00d4ff', 3 * scale, 20 * scale);
     }
     
     // Горизонтальные линии (верх/низ)
     for (let i = 0; i < 3; i++) {
-      const ly = coreY + 15 * scale + i * 10 * scale;
+      const ly = coreY + 20 * scale + i * 12 * scale;
       ctx.globalAlpha = easeOut(fluxAppear) * fluxPulse * 0.5;
-      drawGlowLine(ctx, coreX + 5 * scale, ly, coreX + coreW - 5 * scale, ly, '#00d4ff', 1.5 * scale, 10 * scale);
+      drawGlowLine(ctx, coreX + 8 * scale, ly, coreX + coreW - 8 * scale, ly, '#00d4ff', 2 * scale, 12 * scale);
     }
     for (let i = 0; i < 3; i++) {
-      const ly = coreY + coreH - 15 * scale - i * 10 * scale;
+      const ly = coreY + coreH - 20 * scale - i * 12 * scale;
       ctx.globalAlpha = easeOut(fluxAppear) * fluxPulse * 0.5;
-      drawGlowLine(ctx, coreX + 5 * scale, ly, coreX + coreW - 5 * scale, ly, '#00d4ff', 1.5 * scale, 10 * scale);
+      drawGlowLine(ctx, coreX + 8 * scale, ly, coreX + coreW - 8 * scale, ly, '#00d4ff', 2 * scale, 12 * scale);
     }
     
     // Петля потока
     if (p > 0.3) {
       const loopAppear = Math.min(1, (p - 0.3) / 0.2);
-      ctx.globalAlpha = easeOut(loopAppear) * fluxPulse * 0.3;
+      ctx.globalAlpha = easeOut(loopAppear) * fluxPulse * 0.35;
       ctx.beginPath();
-      ctx.ellipse(cx, cy, coreW / 2 + 60 * scale, coreH / 2 + 40 * scale, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx, cy + 30 * scale, coreW / 2 + 80 * scale, coreH / 2 + 50 * scale, 0, 0, Math.PI * 2);
       ctx.strokeStyle = '#00d4ff';
-      ctx.lineWidth = 1.5 * scale;
-      ctx.setLineDash([10 * scale, 5 * scale]);
+      ctx.lineWidth = 2 * scale;
+      ctx.setLineDash([12 * scale, 6 * scale]);
       ctx.stroke();
       ctx.setLineDash([]);
       
@@ -384,11 +543,11 @@ function renderScene3(ctx: CanvasRenderingContext2D, time: number, cx: number, c
       const arrowAngle = time * 1.5;
       for (let a = 0; a < 4; a++) {
         const angle = arrowAngle + a * Math.PI / 2;
-        const ax = cx + Math.cos(angle) * (coreW / 2 + 60 * scale);
-        const ay = cy + Math.sin(angle) * (coreH / 2 + 40 * scale);
-        ctx.globalAlpha = easeOut(loopAppear) * 0.8;
+        const ax = cx + Math.cos(angle) * (coreW / 2 + 80 * scale);
+        const ay = cy + 30 * scale + Math.sin(angle) * (coreH / 2 + 50 * scale);
+        ctx.globalAlpha = easeOut(loopAppear) * 0.9;
         ctx.beginPath();
-        ctx.arc(ax, ay, 4 * scale, 0, Math.PI * 2);
+        ctx.arc(ax, ay, 5 * scale, 0, Math.PI * 2);
         ctx.fillStyle = '#00d4ff';
         ctx.fill();
       }
@@ -398,20 +557,20 @@ function renderScene3(ctx: CanvasRenderingContext2D, time: number, cx: number, c
   // Частицы
   if (p > 0.4) {
     const pa = Math.min(1, (p - 0.4) / 0.15);
-    for (let i = 0; i < 15; i++) {
-      const px = coreX + innerM + ((time * 50 + i * 25) % (coreW - innerM * 2));
-      const py = coreY + 20 * scale + (Math.sin(time * 3 + i * 1.7) * 0.5 + 0.5) * (coreH - 40 * scale);
+    for (let i = 0; i < 20; i++) {
+      const px = coreX + innerM + ((time * 60 + i * 30) % (coreW - innerM * 2));
+      const py = coreY + 30 * scale + (Math.sin(time * 3 + i * 1.7) * 0.5 + 0.5) * (coreH - 60 * scale);
       const pAlpha = easeOut(pa) * (Math.sin(time * 5 + i * 2) * 0.3 + 0.7);
       
-      ctx.globalAlpha = pAlpha * 0.8;
+      ctx.globalAlpha = pAlpha * 0.9;
       ctx.beginPath();
-      ctx.arc(px, py, 3 * scale, 0, Math.PI * 2);
+      ctx.arc(px, py, 4 * scale, 0, Math.PI * 2);
       ctx.fillStyle = '#00d4ff';
       ctx.fill();
       
-      ctx.globalAlpha = pAlpha * 0.25;
+      ctx.globalAlpha = pAlpha * 0.3;
       ctx.beginPath();
-      ctx.arc(px, py, 9 * scale, 0, Math.PI * 2);
+      ctx.arc(px, py, 12 * scale, 0, Math.PI * 2);
       ctx.fillStyle = '#00d4ff';
       ctx.fill();
     }
@@ -421,24 +580,24 @@ function renderScene3(ctx: CanvasRenderingContext2D, time: number, cx: number, c
   if (p > 0.6 && p < 0.95) {
     const ta = p < 0.65 ? easeOut((p - 0.6) / 0.05) : p > 0.9 ? 1 - easeInOut((p - 0.9) / 0.05) : 1;
     ctx.globalAlpha = ta;
-    drawGlowText(ctx, 'Переменный ток создаёт', cx, coreY + coreH + 60 * scale, '#00d4ff', 20 * scale, '#00d4ff');
-    drawGlowText(ctx, 'переменное магнитное поле', cx, coreY + coreH + 88 * scale, '#00d4ff', 20 * scale, '#00d4ff');
+    drawGlowText(ctx, 'Переменный ток создаёт', cx, coreY + coreH + 70 * scale, '#00d4ff', 24 * scale, '#00d4ff');
+    drawGlowText(ctx, 'переменное магнитное поле', cx, coreY + coreH + 102 * scale, '#00d4ff', 24 * scale, '#00d4ff');
   }
 }
 
 function renderScene4(ctx: CanvasRenderingContext2D, time: number, cx: number, cy: number, scale: number) {
   const p = getSceneProgress(time, 3);
   
-  const coreW = 200 * scale;
-  const coreH = 280 * scale;
+  const coreW = 280 * scale;
+  const coreH = 380 * scale;
   const coreX = cx - coreW / 2;
-  const coreY = cy - coreH / 2 - 20 * scale;
+  const coreY = cy - coreH / 2;
   
   // Сердечник
   ctx.globalAlpha = 1;
   ctx.fillStyle = '#2d3748';
   ctx.fillRect(coreX, coreY, coreW, coreH);
-  const innerM = 45 * scale;
+  const innerM = 60 * scale;
   ctx.fillStyle = '#0a0e27';
   ctx.fillRect(coreX + innerM, coreY + innerM, coreW - innerM * 2, coreH - innerM * 2);
   
@@ -448,41 +607,41 @@ function renderScene4(ctx: CanvasRenderingContext2D, time: number, cx: number, c
   
   // Первичная обмотка
   for (let i = 0; i < primaryTurns; i++) {
-    const oy = coreY + 30 * scale + i * (coreH - 60 * scale) / primaryTurns;
+    const oy = coreY + 40 * scale + i * (coreH - 80 * scale) / primaryTurns;
     const brightness = isStepDown ? 1 : 0.6;
     
     ctx.globalAlpha = 1;
     ctx.beginPath();
-    ctx.ellipse(coreX - 15 * scale, oy, 30 * scale, 10 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(coreX - 20 * scale, oy, 40 * scale, 14 * scale, 0, 0, Math.PI * 2);
     ctx.strokeStyle = '#ff6b35';
-    ctx.lineWidth = 4 * scale;
+    ctx.lineWidth = 5 * scale;
     ctx.stroke();
     
     ctx.beginPath();
-    ctx.ellipse(coreX - 15 * scale, oy, 30 * scale, 10 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(coreX - 20 * scale, oy, 40 * scale, 14 * scale, 0, 0, Math.PI * 2);
     ctx.strokeStyle = '#ffd700';
-    ctx.lineWidth = 10 * scale;
-    ctx.globalAlpha = 0.12 * brightness * (Math.sin(time * 4 + i) * 0.3 + 0.7);
+    ctx.lineWidth = 14 * scale;
+    ctx.globalAlpha = 0.15 * brightness * (Math.sin(time * 4 + i) * 0.3 + 0.7);
     ctx.stroke();
   }
   
   // Вторичная обмотка
   for (let i = 0; i < secondaryTurns; i++) {
-    const oy = coreY + 30 * scale + i * (coreH - 60 * scale) / secondaryTurns;
+    const oy = coreY + 40 * scale + i * (coreH - 80 * scale) / secondaryTurns;
     const brightness = isStepDown ? 0.5 : 1;
     
     ctx.globalAlpha = 1;
     ctx.beginPath();
-    ctx.ellipse(coreX + coreW + 15 * scale, oy, 30 * scale, 10 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(coreX + coreW + 20 * scale, oy, 40 * scale, 14 * scale, 0, 0, Math.PI * 2);
     ctx.strokeStyle = '#f7931e';
-    ctx.lineWidth = 4 * scale;
+    ctx.lineWidth = 5 * scale;
     ctx.stroke();
     
     ctx.beginPath();
-    ctx.ellipse(coreX + coreW + 15 * scale, oy, 30 * scale, 10 * scale, 0, 0, Math.PI * 2);
+    ctx.ellipse(coreX + coreW + 20 * scale, oy, 40 * scale, 14 * scale, 0, 0, Math.PI * 2);
     ctx.strokeStyle = '#ffd700';
-    ctx.lineWidth = 10 * scale;
-    ctx.globalAlpha = 0.12 * brightness * (Math.sin(time * 4 + i + Math.PI) * 0.3 + 0.7);
+    ctx.lineWidth = 14 * scale;
+    ctx.globalAlpha = 0.15 * brightness * (Math.sin(time * 4 + i + Math.PI) * 0.3 + 0.7);
     ctx.stroke();
   }
   
@@ -490,24 +649,24 @@ function renderScene4(ctx: CanvasRenderingContext2D, time: number, cx: number, c
   const fluxPulse = Math.sin(time * 2.5) * 0.3 + 0.7;
   for (let i = 0; i < 3; i++) {
     const lx = coreX + innerM + (i + 0.5) * (coreW - innerM * 2) / 3;
-    ctx.globalAlpha = fluxPulse * 0.5;
-    drawGlowLine(ctx, lx, coreY + 10 * scale, lx, coreY + coreH - 10 * scale, '#00d4ff', 1.5 * scale, 8 * scale);
+    ctx.globalAlpha = fluxPulse * 0.6;
+    drawGlowLine(ctx, lx, coreY + 15 * scale, lx, coreY + coreH - 15 * scale, '#00d4ff', 2 * scale, 12 * scale);
   }
   
   // Частицы во вторичной
-  for (let i = 0; i < 6; i++) {
-    const oy = coreY + 30 * scale + i * (coreH - 60 * scale) / secondaryTurns;
+  for (let i = 0; i < 8; i++) {
+    const oy = coreY + 40 * scale + i * (coreH - 80 * scale) / secondaryTurns;
     const pp = time * 3 + i * 1.5;
-    const px = coreX + coreW + 15 * scale + Math.cos(pp) * 30 * scale;
-    const py = oy + Math.sin(pp) * 10 * scale;
-    ctx.globalAlpha = 0.7;
+    const px = coreX + coreW + 20 * scale + Math.cos(pp) * 40 * scale;
+    const py = oy + Math.sin(pp) * 14 * scale;
+    ctx.globalAlpha = 0.8;
     ctx.beginPath();
-    ctx.arc(px, py, 3 * scale, 0, Math.PI * 2);
+    ctx.arc(px, py, 4 * scale, 0, Math.PI * 2);
     ctx.fillStyle = '#ffd700';
     ctx.fill();
-    ctx.globalAlpha = 0.2;
+    ctx.globalAlpha = 0.25;
     ctx.beginPath();
-    ctx.arc(px, py, 7 * scale, 0, Math.PI * 2);
+    ctx.arc(px, py, 10 * scale, 0, Math.PI * 2);
     ctx.fillStyle = '#ffd700';
     ctx.fill();
   }
@@ -516,7 +675,7 @@ function renderScene4(ctx: CanvasRenderingContext2D, time: number, cx: number, c
   if (p > 0.05 && p < 0.9) {
     const fa = p < 0.1 ? easeOut((p - 0.05) / 0.05) : p > 0.85 ? 1 - easeInOut((p - 0.85) / 0.05) : 1;
     ctx.globalAlpha = fa;
-    drawGlowText(ctx, 'U₁ / U₂ = N₁ / N₂', cx, coreY - 50 * scale, '#ffffff', 26 * scale, '#00d4ff');
+    drawGlowText(ctx, 'U₁ / U₂ = N₁ / N₂', cx, coreY - 60 * scale, '#ffffff', 32 * scale, '#00d4ff');
   }
   
   // Переход — вспышка
@@ -531,34 +690,34 @@ function renderScene4(ctx: CanvasRenderingContext2D, time: number, cx: number, c
   if (p > 0.1 && p < 0.45) {
     const la = p < 0.15 ? easeOut((p - 0.1) / 0.05) : p > 0.4 ? 1 - easeInOut((p - 0.4) / 0.05) : 1;
     ctx.globalAlpha = la;
-    drawGlowText(ctx, 'Понижающий трансформатор', cx, coreY + coreH + 50 * scale, '#ff6b35', 20 * scale, '#ff6b35');
-    drawGlowText(ctx, 'N₁ > N₂ → U₁ > U₂', cx, coreY + coreH + 78 * scale, '#8892b0', 16 * scale);
+    drawGlowText(ctx, 'Понижающий', cx, coreY + coreH + 60 * scale, '#ff6b35', 26 * scale, '#ff6b35');
+    drawGlowText(ctx, 'N₁ > N₂ → U₁ > U₂', cx, coreY + coreH + 95 * scale, '#8892b0', 20 * scale);
     
     ctx.globalAlpha = la * 0.9;
-    drawGlowText(ctx, '220В ⚡', coreX - 70 * scale, coreY - 10 * scale, '#ffd700', 16 * scale, '#ffd700');
-    drawGlowText(ctx, '12В', coreX + coreW + 70 * scale, coreY - 10 * scale, '#ff6b35', 16 * scale, '#ff6b35');
+    drawGlowText(ctx, '220В ⚡', coreX - 90 * scale, coreY - 10 * scale, '#ffd700', 22 * scale, '#ffd700');
+    drawGlowText(ctx, '12В', coreX + coreW + 90 * scale, coreY - 10 * scale, '#ff6b35', 22 * scale, '#ff6b35');
   }
   
   // Повышающий
   if (p > 0.55 && p < 0.85) {
     const la = p < 0.6 ? easeOut((p - 0.55) / 0.05) : p > 0.8 ? 1 - easeInOut((p - 0.8) / 0.05) : 1;
     ctx.globalAlpha = la;
-    drawGlowText(ctx, 'Повышающий трансформатор', cx, coreY + coreH + 50 * scale, '#f7931e', 20 * scale, '#f7931e');
-    drawGlowText(ctx, 'N₁ < N₂ → U₁ < U₂', cx, coreY + coreH + 78 * scale, '#8892b0', 16 * scale);
+    drawGlowText(ctx, 'Повышающий', cx, coreY + coreH + 60 * scale, '#f7931e', 26 * scale, '#f7931e');
+    drawGlowText(ctx, 'N₁ < N₂ → U₁ < U₂', cx, coreY + coreH + 95 * scale, '#8892b0', 20 * scale);
     
     ctx.globalAlpha = la * 0.9;
-    drawGlowText(ctx, '12В', coreX - 70 * scale, coreY - 10 * scale, '#ff6b35', 16 * scale, '#ff6b35');
-    drawGlowText(ctx, '⚡ 220В', coreX + coreW + 70 * scale, coreY - 10 * scale, '#ffd700', 16 * scale, '#ffd700');
+    drawGlowText(ctx, '12В', coreX - 90 * scale, coreY - 10 * scale, '#ff6b35', 22 * scale, '#ff6b35');
+    drawGlowText(ctx, '⚡ 220В', coreX + coreW + 90 * scale, coreY - 10 * scale, '#ffd700', 22 * scale, '#ffd700');
   }
 }
 
 function renderScene5(ctx: CanvasRenderingContext2D, time: number, cx: number, cy: number, scale: number) {
   const p = getSceneProgress(time, 4);
   
-  const schemeY = cy - 50 * scale;
-  const stationX = cx - 320 * scale;
+  const schemeY = cy + 20 * scale;
+  const stationX = cx - 350 * scale;
   const transX = cx;
-  const cityX = cx + 320 * scale;
+  const cityX = cx + 350 * scale;
   
   // Электростанция
   if (p > 0.05) {
@@ -566,19 +725,21 @@ function renderScene5(ctx: CanvasRenderingContext2D, time: number, cx: number, c
     ctx.globalAlpha = easeOut(a);
     
     ctx.fillStyle = '#2d3748';
-    ctx.fillRect(stationX - 40 * scale, schemeY - 50 * scale, 80 * scale, 100 * scale);
+    ctx.fillRect(stationX - 55 * scale, schemeY - 70 * scale, 110 * scale, 140 * scale);
     ctx.fillStyle = '#4a5568';
-    ctx.fillRect(stationX + 15 * scale, schemeY - 80 * scale, 15 * scale, 30 * scale);
+    ctx.fillRect(stationX + 20 * scale, schemeY - 110 * scale, 20 * scale, 40 * scale);
     
     ctx.fillStyle = '#ffd700';
     ctx.globalAlpha = easeOut(a) * (Math.sin(time * 3) * 0.2 + 0.8);
-    ctx.fillRect(stationX - 25 * scale, schemeY - 30 * scale, 15 * scale, 15 * scale);
-    ctx.fillRect(stationX + 10 * scale, schemeY - 30 * scale, 15 * scale, 15 * scale);
+    ctx.fillRect(stationX - 35 * scale, schemeY - 40 * scale, 20 * scale, 20 * scale);
+    ctx.fillRect(stationX + 15 * scale, schemeY - 40 * scale, 20 * scale, 20 * scale);
+    ctx.fillRect(stationX - 35 * scale, schemeY - 10 * scale, 20 * scale, 20 * scale);
+    ctx.fillRect(stationX + 15 * scale, schemeY - 10 * scale, 20 * scale, 20 * scale);
     
     ctx.globalAlpha = easeOut(a);
-    drawGlowText(ctx, '⚡', stationX, schemeY - 95 * scale, '#ffd700', 28 * scale, '#ffd700');
-    ctx.globalAlpha = easeOut(a) * 0.8;
-    drawGlowText(ctx, 'Электростанция', stationX, schemeY + 70 * scale, '#8892b0', 13 * scale);
+    drawGlowText(ctx, '⚡', stationX, schemeY - 130 * scale, '#ffd700', 40 * scale, '#ffd700');
+    ctx.globalAlpha = easeOut(a) * 0.9;
+    drawGlowText(ctx, 'Электростанция', stationX, schemeY + 90 * scale, '#8892b0', 18 * scale);
   }
   
   // ЛЭП
@@ -586,45 +747,45 @@ function renderScene5(ctx: CanvasRenderingContext2D, time: number, cx: number, c
     const la = Math.min(1, (p - 0.15) / 0.15);
     ctx.globalAlpha = easeOut(la);
     
-    for (let i = 0; i < 3; i++) {
-      const px = stationX + 60 * scale + i * 55 * scale;
+    for (let i = 0; i < 4; i++) {
+      const px = stationX + 80 * scale + i * 65 * scale;
       ctx.strokeStyle = '#4a5568';
-      ctx.lineWidth = 2 * scale;
+      ctx.lineWidth = 3 * scale;
       ctx.beginPath();
       ctx.moveTo(px, schemeY);
-      ctx.lineTo(px, schemeY - 40 * scale);
+      ctx.lineTo(px, schemeY - 55 * scale);
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(px - 12 * scale, schemeY - 35 * scale);
-      ctx.lineTo(px + 12 * scale, schemeY - 35 * scale);
+      ctx.moveTo(px - 16 * scale, schemeY - 48 * scale);
+      ctx.lineTo(px + 16 * scale, schemeY - 48 * scale);
       ctx.stroke();
     }
     
     ctx.strokeStyle = '#64748b';
-    ctx.lineWidth = 1.5 * scale;
+    ctx.lineWidth = 2 * scale;
     ctx.beginPath();
-    ctx.moveTo(stationX + 40 * scale, schemeY - 35 * scale);
-    ctx.lineTo(transX - 40 * scale, schemeY - 35 * scale);
+    ctx.moveTo(stationX + 55 * scale, schemeY - 48 * scale);
+    ctx.lineTo(transX - 55 * scale, schemeY - 48 * scale);
     ctx.stroke();
     
     // Энергия
-    const ep = (time * 80) % 200;
-    for (let i = 0; i < 4; i++) {
-      const ex = stationX + 40 * scale + ((ep + i * 55) % (transX - stationX - 80 * scale));
-      ctx.globalAlpha = 0.8;
+    const ep = (time * 100) % 250;
+    for (let i = 0; i < 5; i++) {
+      const ex = stationX + 55 * scale + ((ep + i * 60) % (transX - stationX - 110 * scale));
+      ctx.globalAlpha = 0.9;
       ctx.beginPath();
-      ctx.arc(ex, schemeY - 35 * scale, 4 * scale, 0, Math.PI * 2);
+      ctx.arc(ex, schemeY - 48 * scale, 5 * scale, 0, Math.PI * 2);
       ctx.fillStyle = '#ffd700';
       ctx.fill();
-      ctx.globalAlpha = 0.25;
+      ctx.globalAlpha = 0.3;
       ctx.beginPath();
-      ctx.arc(ex, schemeY - 35 * scale, 10 * scale, 0, Math.PI * 2);
+      ctx.arc(ex, schemeY - 48 * scale, 14 * scale, 0, Math.PI * 2);
       ctx.fillStyle = '#ffd700';
       ctx.fill();
     }
     
-    ctx.globalAlpha = easeOut(la) * 0.6;
-    drawGlowText(ctx, 'ЛЭП (высокое напряжение)', cx - 120 * scale, schemeY - 60 * scale, '#64748b', 11 * scale);
+    ctx.globalAlpha = easeOut(la) * 0.7;
+    drawGlowText(ctx, 'ЛЭП (110 кВ)', cx - 140 * scale, schemeY - 80 * scale, '#64748b', 15 * scale);
   }
   
   // Трансформатор
@@ -633,23 +794,23 @@ function renderScene5(ctx: CanvasRenderingContext2D, time: number, cx: number, c
     ctx.globalAlpha = easeOut(ta);
     
     ctx.strokeStyle = '#ff6b35';
-    ctx.lineWidth = 3 * scale;
+    ctx.lineWidth = 4 * scale;
     ctx.beginPath();
-    ctx.arc(transX - 15 * scale, schemeY, 20 * scale, 0, Math.PI * 2);
+    ctx.arc(transX - 20 * scale, schemeY, 28 * scale, 0, Math.PI * 2);
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(transX + 15 * scale, schemeY, 20 * scale, 0, Math.PI * 2);
+    ctx.arc(transX + 20 * scale, schemeY, 28 * scale, 0, Math.PI * 2);
     ctx.stroke();
     
     const gp = Math.sin(time * 3) * 0.3 + 0.7;
-    ctx.globalAlpha = easeOut(ta) * 0.2 * gp;
+    ctx.globalAlpha = easeOut(ta) * 0.25 * gp;
     ctx.beginPath();
-    ctx.arc(transX, schemeY, 35 * scale, 0, Math.PI * 2);
+    ctx.arc(transX, schemeY, 45 * scale, 0, Math.PI * 2);
     ctx.fillStyle = '#00d4ff';
     ctx.fill();
     
-    ctx.globalAlpha = easeOut(ta) * 0.9;
-    drawGlowText(ctx, 'Трансформатор', transX, schemeY + 50 * scale, '#00d4ff', 13 * scale, '#00d4ff');
+    ctx.globalAlpha = easeOut(ta);
+    drawGlowText(ctx, '⚡ ТРАНСФОРМАТОР', transX, schemeY + 65 * scale, '#00d4ff', 18 * scale, '#00d4ff');
   }
   
   // Провода к городу
@@ -658,23 +819,23 @@ function renderScene5(ctx: CanvasRenderingContext2D, time: number, cx: number, c
     ctx.globalAlpha = easeOut(wa);
     
     ctx.strokeStyle = '#64748b';
-    ctx.lineWidth = 1.5 * scale;
+    ctx.lineWidth = 2 * scale;
     ctx.beginPath();
-    ctx.moveTo(transX + 40 * scale, schemeY);
-    ctx.lineTo(cityX - 40 * scale, schemeY);
+    ctx.moveTo(transX + 55 * scale, schemeY);
+    ctx.lineTo(cityX - 55 * scale, schemeY);
     ctx.stroke();
     
-    const ep2 = (time * 40) % 200;
-    for (let i = 0; i < 3; i++) {
-      const ex = transX + 40 * scale + ((ep2 + i * 65) % (cityX - transX - 80 * scale));
-      ctx.globalAlpha = 0.5;
+    const ep2 = (time * 50) % 250;
+    for (let i = 0; i < 4; i++) {
+      const ex = transX + 55 * scale + ((ep2 + i * 70) % (cityX - transX - 110 * scale));
+      ctx.globalAlpha = 0.6;
       ctx.beginPath();
-      ctx.arc(ex, schemeY, 3 * scale, 0, Math.PI * 2);
+      ctx.arc(ex, schemeY, 4 * scale, 0, Math.PI * 2);
       ctx.fillStyle = '#f7931e';
       ctx.fill();
-      ctx.globalAlpha = 0.12;
+      ctx.globalAlpha = 0.15;
       ctx.beginPath();
-      ctx.arc(ex, schemeY, 7 * scale, 0, Math.PI * 2);
+      ctx.arc(ex, schemeY, 10 * scale, 0, Math.PI * 2);
       ctx.fillStyle = '#f7931e';
       ctx.fill();
     }
@@ -684,65 +845,70 @@ function renderScene5(ctx: CanvasRenderingContext2D, time: number, cx: number, c
   if (p > 0.5) {
     const ca = Math.min(1, (p - 0.5) / 0.2);
     
-    for (let i = 0; i < 5; i++) {
-      const hx = cityX - 60 * scale + i * 30 * scale;
-      const hh = (30 + Math.sin(i * 2) * 20) * scale;
+    for (let i = 0; i < 6; i++) {
+      const hx = cityX - 75 * scale + i * 30 * scale;
+      const hh = (40 + Math.sin(i * 2) * 25) * scale;
       
       ctx.globalAlpha = easeOut(ca);
       ctx.fillStyle = '#1a202c';
-      ctx.fillRect(hx - 12 * scale, schemeY - hh, 24 * scale, hh);
+      ctx.fillRect(hx - 14 * scale, schemeY - hh, 28 * scale, hh);
       
       ctx.beginPath();
-      ctx.moveTo(hx - 15 * scale, schemeY - hh);
-      ctx.lineTo(hx, schemeY - hh - 15 * scale);
-      ctx.lineTo(hx + 15 * scale, schemeY - hh);
+      ctx.moveTo(hx - 18 * scale, schemeY - hh);
+      ctx.lineTo(hx, schemeY - hh - 18 * scale);
+      ctx.lineTo(hx + 18 * scale, schemeY - hh);
       ctx.fillStyle = '#2d3748';
       ctx.fill();
       
       const wg = Math.sin(time * 2 + i) * 0.2 + 0.8;
       ctx.fillStyle = '#ffd700';
       ctx.globalAlpha = easeOut(ca) * wg;
-      ctx.fillRect(hx - 6 * scale, schemeY - hh + 10 * scale, 5 * scale, 5 * scale);
-      ctx.fillRect(hx + 2 * scale, schemeY - hh + 10 * scale, 5 * scale, 5 * scale);
-      if (hh > 35 * scale) {
-        ctx.fillRect(hx - 6 * scale, schemeY - hh + 25 * scale, 5 * scale, 5 * scale);
-        ctx.fillRect(hx + 2 * scale, schemeY - hh + 25 * scale, 5 * scale, 5 * scale);
+      ctx.fillRect(hx - 8 * scale, schemeY - hh + 12 * scale, 6 * scale, 6 * scale);
+      ctx.fillRect(hx + 2 * scale, schemeY - hh + 12 * scale, 6 * scale, 6 * scale);
+      if (hh > 45 * scale) {
+        ctx.fillRect(hx - 8 * scale, schemeY - hh + 28 * scale, 6 * scale, 6 * scale);
+        ctx.fillRect(hx + 2 * scale, schemeY - hh + 28 * scale, 6 * scale, 6 * scale);
+      }
+      if (hh > 60 * scale) {
+        ctx.fillRect(hx - 8 * scale, schemeY - hh + 44 * scale, 6 * scale, 6 * scale);
+        ctx.fillRect(hx + 2 * scale, schemeY - hh + 44 * scale, 6 * scale, 6 * scale);
       }
     }
     
-    ctx.globalAlpha = easeOut(ca) * 0.8;
-    drawGlowText(ctx, 'Город', cityX, schemeY + 50 * scale, '#8892b0', 13 * scale);
+    ctx.globalAlpha = easeOut(ca) * 0.9;
+    drawGlowText(ctx, '🏙️ Город (220В)', cityX, schemeY + 65 * scale, '#8892b0', 18 * scale);
   }
   
   // Текст
   if (p > 0.75) {
     const ta = easeOut((p - 0.75) / 0.1);
     ctx.globalAlpha = Math.min(1, ta);
-    drawGlowText(ctx, 'Трансформаторы — основа энергосистемы', cx, schemeY + 120 * scale, '#00d4ff', 18 * scale, '#00d4ff');
+    drawGlowText(ctx, 'Трансформаторы — основа', cx, schemeY + 130 * scale, '#00d4ff', 24 * scale, '#00d4ff');
+    drawGlowText(ctx, 'энергосистемы', cx, schemeY + 162 * scale, '#00d4ff', 24 * scale, '#00d4ff');
   }
 }
 
 function renderScene6(ctx: CanvasRenderingContext2D, time: number, cx: number, cy: number, scale: number) {
   const p = getSceneProgress(time, 5);
-  const pulse = Math.sin(time * 4) * 0.08 + 1;
+  const pulse = Math.sin(time * 4) * 0.1 + 1;
   const alpha = easeOut(Math.min(1, p / 0.3));
   
   ctx.globalAlpha = alpha;
   ctx.save();
   ctx.translate(cx, cy);
   ctx.scale(pulse, pulse);
-  drawGlowText(ctx, 'Подписывайся!', 0, -20 * scale, '#ffffff', 44 * scale, '#00d4ff');
-  drawGlowText(ctx, '🔔', 0, 50 * scale, '#ffd700', 36 * scale, '#ffd700');
+  drawGlowText(ctx, 'ПОДПИСЫВАЙСЯ!', 0, -30 * scale, '#ffffff', 56 * scale, '#00d4ff');
+  drawGlowText(ctx, '🔔', 0, 60 * scale, '#ffd700', 52 * scale, '#ffd700');
   ctx.restore();
   
-  for (let i = 0; i < 20; i++) {
-    const angle = time * 0.5 + i * Math.PI * 2 / 20;
-    const radius = 200 * scale + Math.sin(time * 2 + i) * 30 * scale;
+  for (let i = 0; i < 25; i++) {
+    const angle = time * 0.5 + i * Math.PI * 2 / 25;
+    const radius = 250 * scale + Math.sin(time * 2 + i) * 40 * scale;
     const px = cx + Math.cos(angle) * radius;
     const py = cy + Math.sin(angle) * radius;
-    ctx.globalAlpha = alpha * 0.5;
+    ctx.globalAlpha = alpha * 0.6;
     ctx.beginPath();
-    ctx.arc(px, py, 3 * scale, 0, Math.PI * 2);
+    ctx.arc(px, py, 4 * scale, 0, Math.PI * 2);
     ctx.fillStyle = i % 2 === 0 ? '#00d4ff' : '#ff6b35';
     ctx.fill();
   }
@@ -776,12 +942,12 @@ export default function TransformerAnimation() {
     const elapsed = (timestamp - startTimeRef.current - totalPausedRef.current) / 1000;
     const time = elapsed % TOTAL_DURATION;
 
-    const sceneIdx = SCENES.findIndex(s => time >= s.start && time < s.end);
-    const validIdx = sceneIdx >= 0 ? sceneIdx : 5;
+    const currentSceneIdx = SCENES.findIndex(s => time >= s.start && time < s.end);
+    const currentValidIdx = currentSceneIdx >= 0 ? currentSceneIdx : 5;
     
     // Обновляем UI раз в ~10 кадров
     if (Math.floor(elapsed * 6) % 1 === 0) {
-      setCurrentScene(validIdx);
+      setCurrentScene(currentValidIdx);
       setProgress(time / TOTAL_DURATION);
     }
 
@@ -789,7 +955,7 @@ export default function TransformerAnimation() {
     const H = canvas.height;
     const cx = W / 2;
     const cy = H / 2;
-    const scale = Math.min(W / 1080, H / 1920);
+    const scale = Math.min(W / 1080, H / 1920) * 1.15; // Увеличенный масштаб
 
     // Фон
     ctx.globalAlpha = 1;
@@ -809,6 +975,12 @@ export default function TransformerAnimation() {
     } else {
       renderScene6(ctx, time, cx, cy, scale);
     }
+    
+    // ТИТРЫ СВЕРХУ
+    const captionSceneIdx = SCENES.findIndex(s => time >= s.start && time < s.end);
+    const captionIdx = captionSceneIdx >= 0 ? captionSceneIdx : 5;
+    const captionSceneP = getSceneProgress(time, captionIdx);
+    drawCaption(ctx, captionIdx, captionSceneP, W, scale);
 
     // Полоса прогресса
     ctx.globalAlpha = 0.6;
@@ -823,7 +995,7 @@ export default function TransformerAnimation() {
     
     for (let i = 0; i < SCENES.length; i++) {
       const mx = barX + barW * (SCENES[i].start / TOTAL_DURATION);
-      ctx.fillStyle = i === validIdx ? '#00d4ff' : '#4a5568';
+      ctx.fillStyle = i === captionIdx ? '#00d4ff' : '#4a5568';
       ctx.beginPath();
       ctx.arc(mx, barY + 2 * scale, 4 * scale, 0, Math.PI * 2);
       ctx.fill();
@@ -833,7 +1005,7 @@ export default function TransformerAnimation() {
     ctx.font = `${12 * scale}px 'Segoe UI', sans-serif`;
     ctx.fillStyle = '#8892b0';
     ctx.textAlign = 'left';
-    ctx.fillText(SCENES[validIdx]?.name || '', barX, barY - 10 * scale);
+    ctx.fillText(SCENES[captionIdx]?.name || '', barX, barY - 10 * scale);
     ctx.textAlign = 'right';
     ctx.fillText(`${Math.floor(time)}с / ${TOTAL_DURATION}с`, barX + barW, barY - 10 * scale);
     ctx.globalAlpha = 1;
