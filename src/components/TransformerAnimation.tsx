@@ -396,8 +396,28 @@ function renderScene2(ctx: CanvasRenderingContext2D, time: number, cx: number, c
     if (p > 0.3 && p < 0.55) {
       const la = p < 0.35 ? easeOut((p - 0.3) / 0.05) : p > 0.5 ? 1 - easeInOut((p - 0.5) / 0.05) : 1;
       ctx.globalAlpha = la;
-      drawGlowText(ctx, 'Первичная', coreX - 100 * scale, cy - 20 * scale, '#ff6b35', 22 * scale, '#ff6b35');
-      drawGlowText(ctx, 'обмотка (N₁)', coreX - 100 * scale, cy + 15 * scale, '#ff6b35', 22 * scale, '#ff6b35');
+      drawGlowText(ctx, 'Первичная', coreX - 140 * scale, cy - 20 * scale, '#ff6b35', 20 * scale, '#ff6b35');
+      drawGlowText(ctx, 'обмотка (N₁)', coreX - 140 * scale, cy + 12 * scale, '#ff6b35', 20 * scale, '#ff6b35');
+      
+      // Стрелка-указатель к обмотке
+      ctx.globalAlpha = la * 0.6;
+      ctx.strokeStyle = '#ff6b35';
+      ctx.lineWidth = 2 * scale;
+      ctx.setLineDash([4 * scale, 3 * scale]);
+      ctx.beginPath();
+      ctx.moveTo(coreX - 100 * scale, cy);
+      ctx.lineTo(coreX - 68 * scale, cy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Наконечник стрелки
+      ctx.beginPath();
+      ctx.moveTo(coreX - 68 * scale, cy);
+      ctx.lineTo(coreX - 76 * scale, cy - 5 * scale);
+      ctx.lineTo(coreX - 76 * scale, cy + 5 * scale);
+      ctx.closePath();
+      ctx.fillStyle = '#ff6b35';
+      ctx.fill();
     }
   }
   
@@ -437,8 +457,28 @@ function renderScene2(ctx: CanvasRenderingContext2D, time: number, cx: number, c
     if (p > 0.55 && p < 0.8) {
       const la = p < 0.6 ? easeOut((p - 0.55) / 0.05) : p > 0.75 ? 1 - easeInOut((p - 0.75) / 0.05) : 1;
       ctx.globalAlpha = la;
-      drawGlowText(ctx, 'Вторичная', coreX + coreW + 100 * scale, cy - 20 * scale, '#f7931e', 22 * scale, '#f7931e');
-      drawGlowText(ctx, 'обмотка (N₂)', coreX + coreW + 100 * scale, cy + 15 * scale, '#f7931e', 22 * scale, '#f7931e');
+      drawGlowText(ctx, 'Вторичная', coreX + coreW + 140 * scale, cy - 20 * scale, '#f7931e', 20 * scale, '#f7931e');
+      drawGlowText(ctx, 'обмотка (N₂)', coreX + coreW + 140 * scale, cy + 12 * scale, '#f7931e', 20 * scale, '#f7931e');
+      
+      // Стрелка-указатель к обмотке
+      ctx.globalAlpha = la * 0.6;
+      ctx.strokeStyle = '#f7931e';
+      ctx.lineWidth = 2 * scale;
+      ctx.setLineDash([4 * scale, 3 * scale]);
+      ctx.beginPath();
+      ctx.moveTo(coreX + coreW + 100 * scale, cy);
+      ctx.lineTo(coreX + coreW + 68 * scale, cy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Наконечник стрелки
+      ctx.beginPath();
+      ctx.moveTo(coreX + coreW + 68 * scale, cy);
+      ctx.lineTo(coreX + coreW + 76 * scale, cy - 5 * scale);
+      ctx.lineTo(coreX + coreW + 76 * scale, cy + 5 * scale);
+      ctx.closePath();
+      ctx.fillStyle = '#f7931e';
+      ctx.fill();
     }
   }
 }
