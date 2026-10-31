@@ -1050,6 +1050,26 @@ export default function TransformerAnimation() {
     ctx.fillText(`${Math.floor(time)}с / ${TOTAL_DURATION}с`, barX + barW, barY - 10 * scale);
     ctx.globalAlpha = 1;
 
+    // Индикатор записи (красная точка в углу)
+    if (isRecordingRef.current) {
+      const dotSize = 8 * scale;
+      const dotX = 30 * scale;
+      const dotY = 30 * scale;
+      const pulse = Math.sin(time * 4) * 0.3 + 0.7;
+      
+      ctx.globalAlpha = pulse;
+      ctx.fillStyle = '#ff0000';
+      ctx.beginPath();
+      ctx.arc(dotX, dotY, dotSize, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.globalAlpha = 1;
+      ctx.font = `bold ${14 * scale}px 'Segoe UI', sans-serif`;
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'left';
+      ctx.fillText('REC', dotX + dotSize + 8 * scale, dotY + 5 * scale);
+    }
+
     animRef.current = requestAnimationFrame(render);
   }, []);
 
@@ -1112,6 +1132,112 @@ export default function TransformerAnimation() {
     setIsPlaying(true);
   };
 
+  // Запись видео
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingProgress, setRecordingProgress] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const isRecordingRef = useRef(false);
+
+  const startRecording = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Предупреждение пользователя
+    const confirmed = window.confirm(
+      'Начнётся запись 60-секундной анимации в формате WebM.\n\n' +
+      '⚠️ Не сворачивайте вкладку и не переключайтесь на другие окна!\n\n' +
+      'После завершения файл скачается автоматически.\n\n' +
+      'Продолжить?'
+    );
+    
+    if (!confirmed) return;
+
+    // Перезапускаем анимацию с начала
+    restart();
+
+    // Получаем поток с canvas
+    const stream = canvas.captureStream(60); // 60 FPS
+    
+    // Определяем поддерживаемый формат
+    const mimeTypes = [
+      'video/webm;codecs=vp9',
+      'video/webm;codecs=vp8',
+      'video/webm'
+    ];
+    
+    let selectedMime = '';
+    for (const mime of mimeTypes) {
+      if (MediaRecorder.isTypeSupported(mime)) {
+        selectedMime = mime;
+        break;
+      }
+    }
+
+    if (!selectedMime) {
+      alert('Ваш браузер не поддерживает запись видео');
+      return;
+    }
+
+    // Создаем MediaRecorder
+    const mediaRecorder = new MediaRecorder(stream, {
+      mimeType: selectedMime,
+      videoBitsPerSecond: 8000000 // 8 Mbps для высокого качества
+    });
+
+    chunksRef.current = [];
+    
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        chunksRef.current.push(e.data);
+      }
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `transformer-animation-${Date.now()}.webm`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      setIsRecording(false);
+      isRecordingRef.current = false;
+      setRecordingProgress(0);
+    };
+
+    mediaRecorderRef.current = mediaRecorder;
+    mediaRecorder.start(1000); // Собираем данные каждую секунду
+    setIsRecording(true);
+    isRecordingRef.current = true;
+
+    // Обновляем прогресс
+    const updateProgress = () => {
+      if (!isPlayingRef.current) return;
+      
+      const elapsed = (performance.now() - startTimeRef.current - totalPausedRef.current) / 1000;
+      const progress = Math.min(elapsed / TOTAL_DURATION, 1);
+      setRecordingProgress(progress);
+
+      if (progress >= 1) {
+        stopRecording();
+      } else {
+        requestAnimationFrame(updateProgress);
+      }
+    };
+    requestAnimationFrame(updateProgress);
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      isRecordingRef.current = false;
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#0a0e27] p-4 select-none">
       <div className="text-center mb-3">
@@ -1128,17 +1254,50 @@ export default function TransformerAnimation() {
       <div className="flex items-center gap-3 mt-4">
         <button
           onClick={togglePlay}
-          className="px-5 py-2 bg-cyan-600/20 border border-cyan-500/40 rounded-lg text-cyan-300 hover:bg-cyan-600/30 transition-all text-sm font-medium cursor-pointer"
+          disabled={isRecording}
+          className="px-5 py-2 bg-cyan-600/20 border border-cyan-500/40 rounded-lg text-cyan-300 hover:bg-cyan-600/30 transition-all text-sm font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPlaying ? '⏸ Пауза' : '▶ Играть'}
         </button>
         <button
           onClick={restart}
-          className="px-5 py-2 bg-orange-600/20 border border-orange-500/40 rounded-lg text-orange-300 hover:bg-orange-600/30 transition-all text-sm font-medium cursor-pointer"
+          disabled={isRecording}
+          className="px-5 py-2 bg-orange-600/20 border border-orange-500/40 rounded-lg text-orange-300 hover:bg-orange-600/30 transition-all text-sm font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           🔄 Заново
         </button>
+        <button
+          onClick={isRecording ? stopRecording : startRecording}
+          className={`px-5 py-2 rounded-lg transition-all text-sm font-medium cursor-pointer ${
+            isRecording
+              ? 'bg-red-600/20 border border-red-500/40 text-red-300 hover:bg-red-600/30'
+              : 'bg-green-600/20 border border-green-500/40 text-green-300 hover:bg-green-600/30'
+          }`}
+        >
+          {isRecording ? '⏹ Стоп' : '⏺ Записать видео'}
+        </button>
       </div>
+
+      {isRecording && (
+        <div className="mt-3 w-full max-w-[380px]">
+          <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+              Идёт запись видео...
+            </span>
+            <span>{Math.round(recordingProgress * 100)}%</span>
+          </div>
+          <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-red-500 to-orange-500 transition-all duration-300"
+              style={{ width: `${recordingProgress * 100}%` }}
+            ></div>
+          </div>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            💡 Анимиция воспроизводится полностью. Файл WebM скачается автоматически.
+          </p>
+        </div>
+      )}
 
       <div className="mt-3 grid grid-cols-3 md:grid-cols-6 gap-1.5 max-w-xl">
         {SCENES.map((scene, i) => (
