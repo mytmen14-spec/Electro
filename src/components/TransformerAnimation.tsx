@@ -1136,6 +1136,7 @@ export default function TransformerAnimation() {
   // Запись видео
   const [isRecording, setIsRecording] = useState(false);
   const [recordingProgress, setRecordingProgress] = useState(0);
+  const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
   const isRecordingRef = useRef(false);
 
   // Fallback метод записи через MediaRecorder
@@ -1190,7 +1191,10 @@ export default function TransformerAnimation() {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        
+        // Сохраняем URL для возможности открытия видео
+        setRecordedVideoUrl(url);
+        
         setIsRecording(false);
         isRecordingRef.current = false;
         setRecordingProgress(0);
@@ -1328,7 +1332,9 @@ export default function TransformerAnimation() {
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
-          URL.revokeObjectURL(url);
+          
+          // Сохраняем URL для возможности открытия видео
+          setRecordedVideoUrl(url);
 
           setIsRecording(false);
           isRecordingRef.current = false;
@@ -1363,6 +1369,19 @@ export default function TransformerAnimation() {
   const stopRecording = () => {
     // Останавливаем запись (завершится на следующем кадре)
     isRecordingRef.current = false;
+  };
+
+  const openRecordedVideo = () => {
+    if (recordedVideoUrl) {
+      window.open(recordedVideoUrl, '_blank');
+    }
+  };
+
+  const clearRecordedVideo = () => {
+    if (recordedVideoUrl) {
+      URL.revokeObjectURL(recordedVideoUrl);
+      setRecordedVideoUrl(null);
+    }
   };
 
   return (
@@ -1422,6 +1441,32 @@ export default function TransformerAnimation() {
           </div>
           <p className="text-xs text-gray-500 mt-2 text-center">
             💡 Анимиция воспроизводится полностью. Файл WebM скачается автоматически.
+          </p>
+        </div>
+      )}
+
+      {recordedVideoUrl && !isRecording && (
+        <div className="mt-4 w-full max-w-[380px] p-4 bg-gradient-to-br from-green-900/20 to-cyan-900/20 border border-green-500/30 rounded-xl">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-green-400 text-lg">✅</span>
+            <span className="text-green-300 text-sm font-medium">Видео записано!</span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={openRecordedVideo}
+              className="flex-1 px-4 py-2 bg-cyan-600/20 border border-cyan-500/40 rounded-lg text-cyan-300 hover:bg-cyan-600/30 transition-all text-sm font-medium cursor-pointer"
+            >
+              🎬 Открыть видео
+            </button>
+            <button
+              onClick={clearRecordedVideo}
+              className="px-4 py-2 bg-red-600/20 border border-red-500/40 rounded-lg text-red-300 hover:bg-red-600/30 transition-all text-sm font-medium cursor-pointer"
+            >
+              🗑️ Удалить
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            Видео откроется в новой вкладке браузера
           </p>
         </div>
       )}
