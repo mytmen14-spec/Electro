@@ -74,6 +74,94 @@ const SCENE_CAPTIONS = [
   { title: '🔔 ПОДПИСЫВАЙСЯ!', subtitle: 'Физика проще, чем кажется!' },
 ];
 
+// Поясняющие титры для каждой сцены
+const EXPLANATION_TITLES = [
+  // Сцена 1: Вступление
+  [
+    { text: 'Трансформатор — устройство,', x: 'center', y: 0.7, start: 0.3, end: 0.5, color: '#ffffff', size: 24 },
+    { text: 'которое изменяет напряжение', x: 'center', y: 0.75, start: 0.35, end: 0.55, color: '#00d4ff', size: 24 },
+    { text: 'без изменения мощности', x: 'center', y: 0.8, start: 0.4, end: 0.6, color: '#ffffff', size: 24 },
+  ],
+  // Сцена 2: Компоненты
+  [
+    { text: 'Сердечник из тонких пластин', x: 'center', y: 0.85, start: 0.15, end: 0.3, color: '#8892b0', size: 18 },
+    { text: 'уменьшает потери на вихревые токи', x: 'center', y: 0.89, start: 0.18, end: 0.33, color: '#64748b', size: 16 },
+    { text: 'Первичная обмотка создаёт', x: 'center', y: 0.85, start: 0.35, end: 0.5, color: '#ff6b35', size: 18 },
+    { text: 'переменное магнитное поле', x: 'center', y: 0.89, start: 0.38, end: 0.53, color: '#ff6b35', size: 16 },
+    { text: 'Вторичная обмотка "ловит"', x: 'center', y: 0.85, start: 0.6, end: 0.75, color: '#f7931e', size: 18 },
+    { text: 'изменяющийся магнитный поток', x: 'center', y: 0.89, start: 0.63, end: 0.78, color: '#f7931e', size: 16 },
+  ],
+  // Сцена 3: Магнитный поток
+  [
+    { text: 'Закон электромагнитной индукции:', x: 'center', y: 0.82, start: 0.2, end: 0.4, color: '#00d4ff', size: 20 },
+    { text: 'Изменяющийся магнитный поток', x: 'center', y: 0.86, start: 0.25, end: 0.45, color: '#ffffff', size: 18 },
+    { text: 'создаёт ЭДС в обмотке', x: 'center', y: 0.9, start: 0.3, end: 0.5, color: '#ffffff', size: 18 },
+    { text: 'ЭДС = -dΦ/dt', x: 'center', y: 0.95, start: 0.4, end: 0.6, color: '#ffd700', size: 22 },
+  ],
+  // Сцена 4: Преобразование
+  [
+    { text: 'Коэффициент трансформации:', x: 'center', y: 0.82, start: 0.15, end: 0.35, color: '#00d4ff', size: 20 },
+    { text: 'k = N₂/N₁ = U₂/U₁', x: 'center', y: 0.87, start: 0.2, end: 0.4, color: '#ffd700', size: 24 },
+    { text: 'Если N₂ > N₁ → U₂ > U₁', x: 'center', y: 0.92, start: 0.6, end: 0.8, color: '#f7931e', size: 18 },
+    { text: '(повышающий)', x: 'center', y: 0.96, start: 0.65, end: 0.85, color: '#8892b0', size: 16 },
+  ],
+  // Сцена 5: Применение
+  [
+    { text: 'Для передачи энергии на расстояние', x: 'center', y: 0.82, start: 0.15, end: 0.35, color: '#ffffff', size: 18 },
+    { text: 'повышают напряжение до 110-500 кВ', x: 'center', y: 0.86, start: 0.2, end: 0.4, color: '#ffd700', size: 18 },
+    { text: 'Это уменьшает потери в проводах', x: 'center', y: 0.9, start: 0.25, end: 0.45, color: '#00d4ff', size: 18 },
+    { text: 'Перед потребителем понижают до 220В', x: 'center', y: 0.94, start: 0.5, end: 0.7, color: '#ff6b35', size: 18 },
+  ],
+  // Сцена 6: Финал
+  [
+    { text: 'Трансформаторы работают', x: 'center', y: 0.75, start: 0.1, end: 0.4, color: '#ffffff', size: 22 },
+    { text: 'на основе электромагнитной индукции', x: 'center', y: 0.8, start: 0.15, end: 0.45, color: '#00d4ff', size: 20 },
+    { text: 'КПД достигает 99%', x: 'center', y: 0.87, start: 0.3, end: 0.5, color: '#ffd700', size: 24 },
+  ],
+];
+
+function drawExplanationTitles(
+  ctx: CanvasRenderingContext2D,
+  sceneIdx: number,
+  sceneProgress: number,
+  W: number,
+  H: number,
+  scale: number
+) {
+  const titles = EXPLANATION_TITLES[sceneIdx];
+  if (!titles) return;
+
+  for (const title of titles) {
+    if (sceneProgress >= title.start && sceneProgress <= title.end) {
+      const titleProgress = (sceneProgress - title.start) / (title.end - title.start);
+      
+      // Плавное появление и исчезновение
+      let alpha = 1;
+      if (titleProgress < 0.15) {
+        alpha = easeOut(titleProgress / 0.15);
+      } else if (titleProgress > 0.85) {
+        alpha = 1 - easeInOut((titleProgress - 0.85) / 0.15);
+      }
+
+      const x = title.x === 'center' ? W / 2 : W * parseFloat(title.x as string);
+      const y = H * title.y;
+
+      ctx.globalAlpha = alpha;
+      ctx.font = `bold ${title.size * scale}px 'Segoe UI', Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Свечение
+      ctx.shadowColor = title.color;
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = title.color;
+      ctx.fillText(title.text, x, y);
+      
+      ctx.shadowBlur = 0;
+    }
+  }
+}
+
 function drawCaption(
   ctx: CanvasRenderingContext2D,
   sceneIdx: number,
@@ -1022,6 +1110,9 @@ export default function TransformerAnimation() {
     const captionIdx = captionSceneIdx >= 0 ? captionSceneIdx : 5;
     const captionSceneP = getSceneProgress(time, captionIdx);
     drawCaption(ctx, captionIdx, captionSceneP, W, scale);
+
+    // Поясняющие титры
+    drawExplanationTitles(ctx, captionIdx, captionSceneP, W, H, scale);
 
     // Полоса прогресса
     ctx.globalAlpha = 0.6;
